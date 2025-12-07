@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Card, Button, Input } from './Shared';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, initializeUserDoc } from '../services/firebase';
-import { AlertCircle, Check, Tv, Heart } from 'lucide-react';
+import { 
+  auth, 
+  initializeUserDoc, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword 
+} from '../services/firebase';
+import { AlertCircle, Check, Tv } from 'lucide-react';
 
 interface AuthProps {
   onLogin: () => void;
@@ -46,10 +50,10 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
       }
       onLogin(); // Parent component handles redirection via auth listener
     } catch (err: any) {
+      console.error("Auth Error:", err);
       let msg = "An error occurred.";
-      if (err.code === 'auth/email-already-in-use') msg = "Email already in use.";
-      if (err.code === 'auth/invalid-credential') msg = "Invalid email or password.";
-      if (err.code === 'auth/weak-password') msg = "Password is too weak.";
+      // Mock errors are not specific, but we handle standard ones if we were throwing them
+      if (err.message) msg = err.message;
       setError(msg);
     } finally {
       setLoading(false);
