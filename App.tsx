@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ViewState, Anime, AnimeStatus, UserProfile, Recommendation } from './types';
 import { Layout } from './components/Layout';
 import { Button, Input, Card, SectionTitle } from './components/Shared';
+import { AuthView } from './components/Auth';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { getAnimeArcInfo, getCompletionProbability, getRecommendations, getMotivationalMessage } from './services/geminiService';
-import { Play, Plus, Star, X, Check, Brain, ThumbsUp, ThumbsDown, AlertCircle, BrainCircuit } from 'lucide-react';
+import { subscribeToAuth, subscribeToAnimeList, subscribeToProfile, saveAnimeToFirestore, updateUserProfileFirestore, logoutUser } from './services/firebase';
+import { Play, Plus, Star, X, Check, Brain, AlertCircle, BrainCircuit } from 'lucide-react';
 import { 
   BarChart, 
   Bar, 
@@ -14,7 +17,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-// --- MOCK DATA FOR SAMPLES ---
+// --- MOCK DATA FOR GUEST MODE ---
 const SAMPLE_ANIME: Anime[] = [
   { 
     id: '1', 
@@ -33,53 +36,8 @@ const SAMPLE_ANIME: Anime[] = [
     status: AnimeStatus.COMPLETED, 
     totalEpisodes: 28, 
     rating: 10 
-  },
-  { 
-    id: '3', 
-    title: 'Jujutsu Kaisen Season 2', 
-    currentEpisode: 18, 
-    status: AnimeStatus.WATCHING, 
-    currentArc: 'Shibuya Incident', 
-    episodesToArcEnd: 5,
-    totalEpisodes: 23, 
-    rating: 9 
   }
 ];
-
-// --- AUTH VIEW ---
-const AuthView = ({ onLogin }: { onLogin: () => void }) => (
-  <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
-    <div className="absolute top-0 left-0 w-full h-full">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-600/20 rounded-full blur-[100px]"></div>
-    </div>
-    
-    <div className="relative z-10 w-full max-w-md">
-      <div className="mb-8 text-center">
-        <h1 className="text-5xl font-bold tracking-tighter mb-2">Ani<span className="text-pink-500">Pink</span></h1>
-        <p className="text-zinc-400">Manage your anime journey with style.</p>
-      </div>
-      
-      <Card className="border-pink-500/20 shadow-2xl shadow-pink-900/20">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1">Email</label>
-            <Input type="email" placeholder="senpai@example.com" />
-          </div>
-          <div>
-            <label className="block text-sm text-zinc-400 mb-1">Password</label>
-            <Input type="password" placeholder="••••••••" />
-          </div>
-          <Button onClick={onLogin} className="w-full mt-2">
-            Enter the Void
-          </Button>
-          <div className="text-center text-xs text-zinc-500 mt-4">
-            By registering, you agree to watch good anime only.
-          </div>
-        </div>
-      </Card>
-    </div>
-  </div>
-);
 
 // --- DASHBOARD VIEW ---
 const DashboardView = ({ 
@@ -301,37 +259,37 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
 // --- PROFILE VIEW ---
 const ProfileView = ({ 
   userProfile, 
-  setUserProfile 
+  onUpdateProfile
 }: { 
   userProfile: UserProfile, 
-  setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>> 
+  onUpdateProfile: (updates: Partial<UserProfile>) => void 
 }) => {
   const [inputLike, setInputLike] = useState('');
   const [inputDislike, setInputDislike] = useState('');
 
   const addLike = () => {
     if (inputLike && !userProfile.likes.includes(inputLike)) {
-      setUserProfile(prev => ({ ...prev, likes: [...prev.likes, inputLike] }));
+      onUpdateProfile({ likes: [...userProfile.likes, inputLike] });
       setInputLike('');
     }
   };
 
   const addDislike = () => {
     if (inputDislike && !userProfile.dislikes.includes(inputDislike)) {
-      setUserProfile(prev => ({ ...prev, dislikes: [...prev.dislikes, inputDislike] }));
+      onUpdateProfile({ dislikes: [...userProfile.dislikes, inputDislike] });
       setInputDislike('');
     }
   };
 
   const removeLike = (item: string) => {
-     setUserProfile(prev => ({ ...prev, likes: prev.likes.filter(i => i !== item) }));
+     onUpdateProfile({ likes: userProfile.likes.filter(i => i !== item) });
   }
 
   const removeDislike = (item: string) => {
-     setUserProfile(prev => ({ ...prev, dislikes: prev.dislikes.filter(i => i !== item) }));
+     onUpdateProfile({ dislikes: userProfile.dislikes.filter(i => i !== item) });
   }
 
-  // Stats for charts
+  // Stats for charts (Mock data for visualization)
   const chartData = [
     { name: 'Action', value: 12 },
     { name: 'Romance', value: 5 },
@@ -347,7 +305,7 @@ const ProfileView = ({
         {/* Likes */}
         <Card>
           <div className="flex items-center gap-2 mb-4 text-pink-400">
-            <ThumbsUp size={20} />
+            <Brain size={20} />
             <h3 className="font-bold text-white">I Like...</h3>
           </div>
           <div className="flex gap-2 mb-4">
@@ -373,7 +331,7 @@ const ProfileView = ({
         {/* Dislikes */}
         <Card>
           <div className="flex items-center gap-2 mb-4 text-purple-400">
-            <ThumbsDown size={20} />
+            <BrainCircuit size={20} />
             <h3 className="font-bold text-white">I Dislike...</h3>
           </div>
           <div className="flex gap-2 mb-4">
@@ -482,39 +440,93 @@ const RecommendationsView = ({
 
 // --- MAIN APP COMPONENT ---
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setView] = useState<ViewState>(ViewState.DASHBOARD);
+  const [user, setUser] = useState<any | null>(null);
+  const [currentView, setView] = useState<ViewState>(ViewState.AUTH);
   
   // State
-  const [animeList, setAnimeList] = useState<Anime[]>(SAMPLE_ANIME);
+  const [animeList, setAnimeList] = useState<Anime[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     username: 'Guest',
-    likes: ['Cyberpunk: Edgerunners', 'Death Note'],
-    dislikes: ['Ex-Arm']
+    likes: [],
+    dislikes: []
   });
 
-  // Actions
-  const handleUpdateAnime = (id: string, newEpisode: number) => {
-    setAnimeList(prev => prev.map(a => {
-      if (a.id === id) {
-        // If updating episode, check if we need to update arc progress locally (simple decrement)
-        // In a real app, we might re-fetch AI data periodically
-        const newArcEps = a.episodesToArcEnd ? Math.max(0, a.episodesToArcEnd - 1) : undefined;
-        const newStatus = (a.totalEpisodes && newEpisode >= a.totalEpisodes) ? AnimeStatus.COMPLETED : a.status;
-        
-        return { 
-          ...a, 
+  // Init Auth Listener
+  useEffect(() => {
+    const unsubscribe = subscribeToAuth((firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setView(ViewState.DASHBOARD);
+      } else {
+        setUser(null);
+        // Don't auto-redirect if viewing Privacy Policy
+        if (currentView !== ViewState.PRIVACY_POLICY) {
+           setView(ViewState.AUTH);
+        }
+        setAnimeList(SAMPLE_ANIME); // Reset to samples/guest mode
+      }
+    });
+    return () => unsubscribe();
+  }, [currentView]);
+
+  // Init Data Listeners when User is present
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubAnime = subscribeToAnimeList(user.uid, (list) => {
+      setAnimeList(list);
+    });
+
+    const unsubProfile = subscribeToProfile(user.uid, (profile) => {
+      setUserProfile(profile);
+    });
+
+    return () => {
+      unsubAnime();
+      unsubProfile();
+    };
+  }, [user]);
+
+  // --- ACTIONS (Route to Firebase or Local State) ---
+
+  const handleUpdateAnime = async (id: string, newEpisode: number) => {
+    if (user) {
+      // Find current state to calculate optimistic updates or logic
+      const currentAnime = animeList.find(a => a.id === id);
+      if (!currentAnime) return;
+
+      const newArcEps = currentAnime.episodesToArcEnd ? Math.max(0, currentAnime.episodesToArcEnd - 1) : undefined;
+      const newStatus = (currentAnime.totalEpisodes && newEpisode >= currentAnime.totalEpisodes) ? AnimeStatus.COMPLETED : currentAnime.status;
+
+      const updated = { 
+          ...currentAnime, 
           currentEpisode: newEpisode, 
           episodesToArcEnd: newArcEps,
           status: newStatus
-        };
-      }
-      return a;
-    }));
+      };
+      await saveAnimeToFirestore(user.uid, updated);
+    } else {
+       // Guest Mode (Local State Only)
+       setAnimeList(prev => prev.map(a => {
+        if (a.id === id) {
+          const newArcEps = a.episodesToArcEnd ? Math.max(0, a.episodesToArcEnd - 1) : undefined;
+          const newStatus = (a.totalEpisodes && newEpisode >= a.totalEpisodes) ? AnimeStatus.COMPLETED : a.status;
+          return { ...a, currentEpisode: newEpisode, episodesToArcEnd: newArcEps, status: newStatus };
+        }
+        return a;
+      }));
+    }
   };
 
-  const handleRateAnime = (id: string, rating: number) => {
-      setAnimeList(prev => prev.map(a => a.id === id ? {...a, rating} : a));
+  const handleRateAnime = async (id: string, rating: number) => {
+      if (user) {
+        const currentAnime = animeList.find(a => a.id === id);
+        if (currentAnime) {
+          await saveAnimeToFirestore(user.uid, { ...currentAnime, rating });
+        }
+      } else {
+         setAnimeList(prev => prev.map(a => a.id === id ? {...a, rating} : a));
+      }
   };
 
   const handleAddAnime = async (title: string, currentEpisode: number) => {
@@ -527,37 +539,56 @@ const App: React.FC = () => {
       status: AnimeStatus.WATCHING
     };
     
-    // Optimistic Update
-    setAnimeList(prev => [newAnime, ...prev]);
+    // Optimistic Update (Guest) or UI Feedback
+    if (!user) setAnimeList(prev => [newAnime, ...prev]);
 
     // 2. Fetch AI Data
     try {
       const info = await getAnimeArcInfo(title, currentEpisode);
-      setAnimeList(prev => prev.map(a => {
-        if (a.id === tempId) {
-          return {
-            ...a,
-            currentArc: info.currentArc,
-            episodesToArcEnd: info.episodesToArcEnd,
-            totalEpisodes: info.totalEpisodes
-          };
-        }
-        return a;
-      }));
+      const enrichedAnime = {
+        ...newAnime,
+        currentArc: info.currentArc,
+        episodesToArcEnd: info.episodesToArcEnd,
+        totalEpisodes: info.totalEpisodes
+      };
+
+      if (user) {
+        await saveAnimeToFirestore(user.uid, enrichedAnime);
+      } else {
+         setAnimeList(prev => prev.map(a => a.id === tempId ? enrichedAnime : a));
+      }
+
     } catch (e) {
       console.error("Failed to enrich anime data", e);
     }
   };
 
-  if (!isLoggedIn) {
-    return <AuthView onLogin={() => setIsLoggedIn(true)} />;
+  const handleUpdateProfile = async (updates: Partial<UserProfile>) => {
+    if (user) {
+      await updateUserProfileFirestore(user.uid, updates);
+    } else {
+      setUserProfile(prev => ({ ...prev, ...updates }));
+    }
+  }
+
+  // --- ROUTING ---
+
+  if (currentView === ViewState.PRIVACY_POLICY) {
+    return <PrivacyPolicy onBack={() => setView(user ? ViewState.DASHBOARD : ViewState.AUTH)} />;
+  }
+
+  if (currentView === ViewState.AUTH) {
+    return <AuthView onLogin={() => {}} onViewPrivacy={() => setView(ViewState.PRIVACY_POLICY)} />;
   }
 
   return (
     <Layout 
       currentView={currentView} 
       setView={setView} 
-      onLogout={() => setIsLoggedIn(false)}
+      onLogout={() => {
+        logoutUser();
+        setView(ViewState.AUTH);
+      }}
     >
       {currentView === ViewState.DASHBOARD && (
         <DashboardView 
@@ -571,7 +602,7 @@ const App: React.FC = () => {
         <PredictorView userProfile={userProfile} />
       )}
       {currentView === ViewState.PROFILE && (
-        <ProfileView userProfile={userProfile} setUserProfile={setUserProfile} />
+        <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} />
       )}
       {currentView === ViewState.RECOMMENDATIONS && (
         <RecommendationsView animeList={animeList} userProfile={userProfile} />

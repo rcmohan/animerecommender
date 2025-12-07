@@ -3,7 +3,8 @@ export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   PREDICTOR = 'PREDICTOR',
   PROFILE = 'PROFILE',
-  RECOMMENDATIONS = 'RECOMMENDATIONS'
+  RECOMMENDATIONS = 'RECOMMENDATIONS',
+  PRIVACY_POLICY = 'PRIVACY_POLICY'
 }
 
 export enum AnimeStatus {
@@ -27,6 +28,7 @@ export interface Anime {
 }
 
 export interface UserProfile {
+  uid?: string; // Added for Firebase mapping
   username: string;
   likes: string[];
   dislikes: string[];
