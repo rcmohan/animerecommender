@@ -1,19 +1,19 @@
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
   onAuthStateChanged,
-  User
+  User 
 } from "firebase/auth";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  onSnapshot,
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  onSnapshot, 
   updateDoc,
   arrayUnion,
   arrayRemove
@@ -21,18 +21,17 @@ import {
 import { Anime, UserProfile } from "../types";
 
 // --- CONFIGURATION ---
+// TODO: Replace with your actual Firebase project configuration
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
+  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyDummyKey-ReplaceMe",
   authDomain: "anipink-app.firebaseapp.com",
   projectId: "anipink-app",
-  storageBucket: "anipink-app.firebasestorage.app",
-  messagingSenderId: "944523240658",
-  appId: "1:944523240658:web:0094b1016563278d20790b",
-  measurementId: "G-ES6WS9RW3B"
-}
-console.log("initializing firebase");
+  storageBucket: "anipink-app.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:dummy"
+};
+
 const app = initializeApp(firebaseConfig);
-console.log("firebase initialized");
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
@@ -49,7 +48,7 @@ export const logoutUser = () => signOut(auth);
 export const initializeUserDoc = async (user: User) => {
   const userRef = doc(db, "users", user.uid);
   const snap = await getDoc(userRef);
-
+  
   if (!snap.exists()) {
     await setDoc(userRef, {
       email: user.email,
@@ -67,7 +66,7 @@ export const subscribeToAnimeList = (uid: string, callback: (list: Anime[]) => v
   // We store anime as a sub-collection or a field. 
   // For a simple app, a sub-collection 'watch-history' is robust.
   const q = collection(db, "users", uid, "watch-history");
-
+  
   return onSnapshot(q, (snapshot) => {
     const list: Anime[] = [];
     snapshot.forEach((doc) => {

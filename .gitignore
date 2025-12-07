@@ -22,7 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Firebase
-anipink-app-firebase-adminsdk-fbsvc-0a7cf426b2.json
-.env.local
