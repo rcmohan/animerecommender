@@ -7,46 +7,46 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { getAnimeArcInfo, getCompletionProbability, getRecommendations, getMotivationalMessage } from './services/geminiService';
 import { subscribeToAuth, subscribeToAnimeList, subscribeToProfile, saveAnimeToFirestore, updateUserProfileFirestore, logoutUser } from './services/firebase';
 import { Play, Plus, Star, X, Check, Brain, AlertCircle, BrainCircuit } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 
 // --- MOCK DATA FOR GUEST MODE ---
 const SAMPLE_ANIME: Anime[] = [
-  { 
-    id: '1', 
-    title: 'One Piece', 
-    currentEpisode: 1089, 
-    status: AnimeStatus.WATCHING, 
-    currentArc: 'Egghead Island', 
+  {
+    id: '1',
+    title: 'One Piece',
+    currentEpisode: 1089,
+    status: AnimeStatus.WATCHING,
+    currentArc: 'Egghead Island',
     episodesToArcEnd: 15,
-    totalEpisodes: 1100, 
-    rating: 9 
+    totalEpisodes: 1100,
+    rating: 9
   },
-  { 
-    id: '2', 
-    title: 'Frieren: Beyond Journey\'s End', 
-    currentEpisode: 28, 
-    status: AnimeStatus.COMPLETED, 
-    totalEpisodes: 28, 
-    rating: 10 
+  {
+    id: '2',
+    title: 'Frieren: Beyond Journey\'s End',
+    currentEpisode: 28,
+    status: AnimeStatus.COMPLETED,
+    totalEpisodes: 28,
+    rating: 10
   }
 ];
 
 // --- DASHBOARD VIEW ---
-const DashboardView = ({ 
-  animeList, 
-  onUpdateAnime, 
+const DashboardView = ({
+  animeList,
+  onUpdateAnime,
   onAddAnime,
   onRateAnime
-}: { 
-  animeList: Anime[], 
+}: {
+  animeList: Anime[],
   onUpdateAnime: (id: string, ep: number) => void,
   onAddAnime: (title: string, currentEp: number) => void,
   onRateAnime: (id: string, rating: number) => void
@@ -78,7 +78,7 @@ const DashboardView = ({
         {/* Main Tracker List */}
         <div className="lg:col-span-2 space-y-6">
           <SectionTitle title="Currently Watching" subtitle="Keep up the pace!" />
-          
+
           <div className="space-y-4">
             {watching.map(anime => (
               <Card key={anime.id} className="group hover:border-pink-500/40 transition-all">
@@ -87,28 +87,28 @@ const DashboardView = ({
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold text-lg text-white">{anime.title}</h3>
                       {anime.rating && (
-                         <span className="bg-yellow-500/10 text-yellow-500 text-xs px-2 py-0.5 rounded flex items-center gap-1">
-                           <Star size={10} fill="currentColor" /> {anime.rating}
-                         </span>
+                        <span className="bg-yellow-500/10 text-yellow-500 text-xs px-2 py-0.5 rounded flex items-center gap-1">
+                          <Star size={10} fill="currentColor" /> {anime.rating}
+                        </span>
                       )}
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-4 text-sm text-zinc-400">
                       <div className="flex items-center gap-1">
                         <Play size={14} className="text-pink-500" />
                         Ep {anime.currentEpisode} / {anime.totalEpisodes || '?'}
                       </div>
                       {anime.currentArc && (
-                         <div className="flex items-center gap-1 text-pink-300">
-                           <BrainCircuit size={14} />
-                           Arc: {anime.currentArc}
-                         </div>
+                        <div className="flex items-center gap-1 text-pink-300">
+                          <BrainCircuit size={14} />
+                          Arc: {anime.currentArc}
+                        </div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button 
+                    <button
                       onClick={() => onUpdateAnime(anime.id, anime.currentEpisode + 1)}
                       className="p-2 bg-pink-600 rounded-lg hover:bg-pink-500 text-white transition-colors"
                       title="Watched next episode"
@@ -116,71 +116,74 @@ const DashboardView = ({
                       <Plus size={18} />
                     </button>
                     <button
-                        onClick={() => attemptHold(anime.title)}
-                        className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 text-zinc-400 text-xs font-medium"
+                      onClick={() => attemptHold(anime.title)}
+                      className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 text-zinc-400 text-xs font-medium"
                     >
-                        Hold
+                      Hold
                     </button>
                     {/* Simple Rating Dropdown */}
-                    <select 
+                    <select
                       className="bg-zinc-800 text-white text-sm rounded-lg p-2 border-none outline-none focus:ring-1 focus:ring-pink-500"
                       value={anime.rating || ''}
                       onChange={(e) => onRateAnime(anime.id, parseInt(e.target.value))}
                     >
                       <option value="">Rate</option>
-                      {[10,9,8,7,6,5,4,3,2,1].map(r => <option key={r} value={r}>{r}</option>)}
+                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 </div>
 
                 {/* Progress Bar for Arc */}
-                {anime.episodesToArcEnd !== undefined && anime.episodesToArcEnd > 0 && (
+                {anime.episodesToArcEnd !== undefined && (
                   <div className="mt-4">
                     <div className="flex justify-between text-xs text-zinc-500 mb-1">
                       <span>Arc Progress</span>
-                      <span>{anime.episodesToArcEnd} eps left in arc</span>
+                      <span>{anime.episodesToArcEnd > 0 ? `${anime.episodesToArcEnd} eps left` : 'Arc Complete / Unknown'}</span>
                     </div>
                     <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                       <div className="h-full bg-gradient-to-r from-pink-500 to-purple-500 w-1/2 animate-pulse"></div>
+                      <div 
+                        className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-1000"
+                        style={{ width: `${Math.max(5, 100 - (anime.episodesToArcEnd * 5))}%` }} 
+                      ></div>
                     </div>
                   </div>
                 )}
               </Card>
             ))}
-            
+
             {watching.length === 0 && (
-                <div className="text-zinc-500 italic text-center py-10">No anime in progress. Start something new!</div>
+              <div className="text-zinc-500 italic text-center py-10">No anime in progress. Start something new!</div>
             )}
           </div>
         </div>
 
         {/* Quick Add Sidebar */}
         <div className="space-y-6">
-           <SectionTitle title="New Journey" />
-           <Card>
-              <div className="space-y-3">
-                <Input 
-                  placeholder="Anime Title..." 
-                  value={newTitle} 
-                  onChange={(e) => setNewTitle(e.target.value)} 
+          <SectionTitle title="New Journey" />
+          <Card>
+            <div className="space-y-3">
+              <Input
+                placeholder="Anime Title..."
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Ep #"
+                  className="w-24"
+                  value={newEp}
+                  onChange={(e) => setNewEp(e.target.value)}
                 />
-                <div className="flex gap-2">
-                   <Input 
-                    type="number" 
-                    placeholder="Ep #" 
-                    className="w-24"
-                    value={newEp}
-                    onChange={(e) => setNewEp(e.target.value)}
-                  />
-                   <Button onClick={handleAdd} disabled={loading} className="flex-1">
-                     {loading ? 'Analyzing...' : 'Track'}
-                   </Button>
-                </div>
-                <p className="text-xs text-zinc-500 mt-2">
-                  *AI will automatically fetch arc info.
-                </p>
+                <Button onClick={handleAdd} disabled={loading} className="flex-1">
+                  {loading ? 'Analyzing...' : 'Track'}
+                </Button>
               </div>
-           </Card>
+              <p className="text-xs text-zinc-500 mt-2">
+                *AI will automatically fetch arc info.
+              </p>
+            </div>
+          </Card>
         </div>
       </div>
 
@@ -189,7 +192,7 @@ const DashboardView = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-pink-500 p-6 rounded-2xl max-w-sm w-full text-center relative shadow-[0_0_50px_rgba(236,72,153,0.3)]">
             <div className="w-16 h-16 bg-pink-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="text-pink-500" size={32} />
+              <AlertCircle className="text-pink-500" size={32} />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Not so fast!</h3>
             <p className="text-pink-200 mb-6 italic">"{showHoldWarning}"</p>
@@ -206,7 +209,7 @@ const DashboardView = ({
 // --- PREDICTOR VIEW ---
 const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
   const [query, setQuery] = useState('');
-  const [result, setResult] = useState<{probability: number, reason: string} | null>(null);
+  const [result, setResult] = useState<{ probability: number, reason: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handlePredict = async () => {
@@ -225,10 +228,10 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
       </div>
 
       <div className="flex gap-4">
-        <Input 
-          placeholder="e.g., One Piece, Naruto, Steins;Gate..." 
-          value={query} 
-          onChange={(e) => setQuery(e.target.value)} 
+        <Input
+          placeholder="e.g., One Piece, Naruto, Steins;Gate..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="text-lg"
         />
         <Button onClick={handlePredict} disabled={loading} className="px-8">
@@ -243,10 +246,10 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
             {result.probability}%
           </div>
           <p className="text-xl text-white font-light italic">"{result.reason}"</p>
-          
+
           <div className="mt-8 h-2 w-64 mx-auto bg-zinc-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-1000 ${result.probability > 50 ? 'bg-green-500' : 'bg-red-500'}`} 
+            <div
+              className={`h-full transition-all duration-1000 ${result.probability > 50 ? 'bg-green-500' : 'bg-red-500'}`}
               style={{ width: `${result.probability}%` }}
             ></div>
           </div>
@@ -257,12 +260,12 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
 };
 
 // --- PROFILE VIEW ---
-const ProfileView = ({ 
-  userProfile, 
+const ProfileView = ({
+  userProfile,
   onUpdateProfile
-}: { 
-  userProfile: UserProfile, 
-  onUpdateProfile: (updates: Partial<UserProfile>) => void 
+}: {
+  userProfile: UserProfile,
+  onUpdateProfile: (updates: Partial<UserProfile>) => void
 }) => {
   const [inputLike, setInputLike] = useState('');
   const [inputDislike, setInputDislike] = useState('');
@@ -282,11 +285,11 @@ const ProfileView = ({
   };
 
   const removeLike = (item: string) => {
-     onUpdateProfile({ likes: userProfile.likes.filter(i => i !== item) });
+    onUpdateProfile({ likes: userProfile.likes.filter(i => i !== item) });
   }
 
   const removeDislike = (item: string) => {
-     onUpdateProfile({ dislikes: userProfile.dislikes.filter(i => i !== item) });
+    onUpdateProfile({ dislikes: userProfile.dislikes.filter(i => i !== item) });
   }
 
   // Stats for charts (Mock data for visualization)
@@ -301,7 +304,7 @@ const ProfileView = ({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
       <div className="space-y-6">
         <SectionTitle title="Your Taste Profile" subtitle="Help the AI understand you better" />
-        
+
         {/* Likes */}
         <Card>
           <div className="flex items-center gap-2 mb-4 text-pink-400">
@@ -309,10 +312,10 @@ const ProfileView = ({
             <h3 className="font-bold text-white">I Like...</h3>
           </div>
           <div className="flex gap-2 mb-4">
-            <Input 
-              value={inputLike} 
-              onChange={(e) => setInputLike(e.target.value)} 
-              placeholder="e.g. Attack on Titan" 
+            <Input
+              value={inputLike}
+              onChange={(e) => setInputLike(e.target.value)}
+              placeholder="e.g. Attack on Titan"
               className="py-2"
             />
             <Button onClick={addLike} variant="secondary"><Plus size={18} /></Button>
@@ -321,7 +324,7 @@ const ProfileView = ({
             {userProfile.likes.map(like => (
               <span key={like} className="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-sm border border-green-500/20 flex items-center gap-2">
                 {like}
-                <button onClick={() => removeLike(like)} className="hover:text-white"><X size={12}/></button>
+                <button onClick={() => removeLike(like)} className="hover:text-white"><X size={12} /></button>
               </span>
             ))}
             {userProfile.likes.length === 0 && <span className="text-zinc-500 text-sm">No likes added yet.</span>}
@@ -335,56 +338,56 @@ const ProfileView = ({
             <h3 className="font-bold text-white">I Dislike...</h3>
           </div>
           <div className="flex gap-2 mb-4">
-            <Input 
-              value={inputDislike} 
-              onChange={(e) => setInputDislike(e.target.value)} 
-              placeholder="e.g. Fillers" 
+            <Input
+              value={inputDislike}
+              onChange={(e) => setInputDislike(e.target.value)}
+              placeholder="e.g. Fillers"
               className="py-2"
             />
             <Button onClick={addDislike} variant="secondary"><Plus size={18} /></Button>
           </div>
           <div className="flex flex-wrap gap-2">
-             {userProfile.dislikes.map(dislike => (
+            {userProfile.dislikes.map(dislike => (
               <span key={dislike} className="px-3 py-1 bg-red-500/10 text-red-400 rounded-full text-sm border border-red-500/20 flex items-center gap-2">
                 {dislike}
-                <button onClick={() => removeDislike(dislike)} className="hover:text-white"><X size={12}/></button>
+                <button onClick={() => removeDislike(dislike)} className="hover:text-white"><X size={12} /></button>
               </span>
             ))}
-             {userProfile.dislikes.length === 0 && <span className="text-zinc-500 text-sm">No dislikes added yet.</span>}
+            {userProfile.dislikes.length === 0 && <span className="text-zinc-500 text-sm">No dislikes added yet.</span>}
           </div>
         </Card>
       </div>
 
       <div className="space-y-6">
-         <SectionTitle title="Watch Statistics" />
-         <Card className="h-80 flex flex-col justify-center">
-            <h3 className="text-center text-zinc-400 mb-4 text-sm">Genre Distribution</h3>
-             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff' }}
-                  itemStyle={{ color: '#ec4899' }}
-                  cursor={{fill: 'transparent'}}
-                />
-                <Bar dataKey="value" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-         </Card>
+        <SectionTitle title="Watch Statistics" />
+        <Card className="h-80 flex flex-col justify-center">
+          <h3 className="text-center text-zinc-400 mb-4 text-sm">Genre Distribution</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+              <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff' }}
+                itemStyle={{ color: '#ec4899' }}
+                cursor={{ fill: 'transparent' }}
+              />
+              <Bar dataKey="value" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
       </div>
     </div>
   );
 };
 
 // --- RECOMMENDATIONS VIEW ---
-const RecommendationsView = ({ 
-  animeList, 
-  userProfile 
-}: { 
-  animeList: Anime[], 
-  userProfile: UserProfile 
+const RecommendationsView = ({
+  animeList,
+  userProfile
+}: {
+  animeList: Anime[],
+  userProfile: UserProfile
 }) => {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -414,10 +417,10 @@ const RecommendationsView = ({
             <Card key={i} className="flex flex-col h-full border-pink-500/20 hover:scale-105 transition-transform duration-300">
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-2">
-                   <h3 className="text-xl font-bold text-white">{rec.title}</h3>
-                   <span className="bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-                     {rec.matchScore}% Match
-                   </span>
+                  <h3 className="text-xl font-bold text-white">{rec.title}</h3>
+                  <span className="bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-md">
+                    {rec.matchScore}% Match
+                  </span>
                 </div>
                 <p className="text-zinc-400 text-sm leading-relaxed">{rec.reason}</p>
               </div>
@@ -428,8 +431,8 @@ const RecommendationsView = ({
       ) : (
         !loading && (
           <div className="text-center py-20 border border-dashed border-zinc-800 rounded-xl">
-             <Brain size={48} className="mx-auto text-zinc-700 mb-4" />
-             <p className="text-zinc-500">Hit the button to analyze your taste matrix.</p>
+            <Brain size={48} className="mx-auto text-zinc-700 mb-4" />
+            <p className="text-zinc-500">Hit the button to analyze your taste matrix.</p>
           </div>
         )
       )}
@@ -442,7 +445,7 @@ const RecommendationsView = ({
 const App: React.FC = () => {
   const [user, setUser] = useState<any | null>(null);
   const [currentView, setView] = useState<ViewState>(ViewState.AUTH);
-  
+
   // State
   const [animeList, setAnimeList] = useState<Anime[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -456,18 +459,18 @@ const App: React.FC = () => {
     const unsubscribe = subscribeToAuth((firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        setView(ViewState.DASHBOARD);
+        // Only redirect to dashboard if we are currently at the generic Auth (login) screen.
+        // This prevents resetting the view if the user is already navigating (e.g. on Predictor).
+        setView(prev => prev === ViewState.AUTH ? ViewState.DASHBOARD : prev);
       } else {
         setUser(null);
         // Don't auto-redirect if viewing Privacy Policy
-        if (currentView !== ViewState.PRIVACY_POLICY) {
-           setView(ViewState.AUTH);
-        }
+        setView(prev => prev !== ViewState.PRIVACY_POLICY ? ViewState.AUTH : prev);
         setAnimeList(SAMPLE_ANIME); // Reset to samples/guest mode
       }
     });
     return () => unsubscribe();
-  }, [currentView]);
+  }, []);
 
   // Init Data Listeners when User is present
   useEffect(() => {
@@ -490,43 +493,53 @@ const App: React.FC = () => {
   // --- ACTIONS (Route to Firebase or Local State) ---
 
   const handleUpdateAnime = async (id: string, newEpisode: number) => {
+    // 1. Calculate base updates
+    const currentAnime = animeList.find(a => a.id === id);
+    if (!currentAnime) return;
+
+    let newArcEps = currentAnime.episodesToArcEnd ? currentAnime.episodesToArcEnd - 1 : undefined;
+    const newStatus = (currentAnime.totalEpisodes && newEpisode >= currentAnime.totalEpisodes) ? AnimeStatus.COMPLETED : currentAnime.status;
+    let newArcName = currentAnime.currentArc;
+
+    // 2. Logic: If arc finished or unknown (eps <= 0), try to fetch next arc
+    // Only fetch if we have a valid key to avoid errors for basic users
+    if (newArcEps !== undefined && newArcEps <= 0) {
+      try {
+        // Fetch info for the NEXT episode context
+        const info = await getAnimeArcInfo(currentAnime.title, newEpisode);
+        newArcEps = info.episodesToArcEnd;
+        newArcName = info.currentArc;
+      } catch (e) {
+        console.log("Could not auto-fetch next arc", e);
+        newArcEps = 0; // Stick at 0 if fetch fails
+      }
+    }
+
+    const updated = {
+      ...currentAnime,
+      currentEpisode: newEpisode,
+      episodesToArcEnd: newArcEps,
+      currentArc: newArcName,
+      status: newStatus
+    };
+
     if (user) {
-      // Find current state to calculate optimistic updates or logic
-      const currentAnime = animeList.find(a => a.id === id);
-      if (!currentAnime) return;
-
-      const newArcEps = currentAnime.episodesToArcEnd ? Math.max(0, currentAnime.episodesToArcEnd - 1) : undefined;
-      const newStatus = (currentAnime.totalEpisodes && newEpisode >= currentAnime.totalEpisodes) ? AnimeStatus.COMPLETED : currentAnime.status;
-
-      const updated = { 
-          ...currentAnime, 
-          currentEpisode: newEpisode, 
-          episodesToArcEnd: newArcEps,
-          status: newStatus
-      };
       await saveAnimeToFirestore(user.uid, updated);
     } else {
-       // Guest Mode (Local State Only)
-       setAnimeList(prev => prev.map(a => {
-        if (a.id === id) {
-          const newArcEps = a.episodesToArcEnd ? Math.max(0, a.episodesToArcEnd - 1) : undefined;
-          const newStatus = (a.totalEpisodes && newEpisode >= a.totalEpisodes) ? AnimeStatus.COMPLETED : a.status;
-          return { ...a, currentEpisode: newEpisode, episodesToArcEnd: newArcEps, status: newStatus };
-        }
-        return a;
-      }));
+      // Guest Mode (Local State Only)
+      setAnimeList(prev => prev.map(a => a.id === id ? updated : a));
     }
   };
 
   const handleRateAnime = async (id: string, rating: number) => {
-      if (user) {
-        const currentAnime = animeList.find(a => a.id === id);
-        if (currentAnime) {
-          await saveAnimeToFirestore(user.uid, { ...currentAnime, rating });
-        }
-      } else {
-         setAnimeList(prev => prev.map(a => a.id === id ? {...a, rating} : a));
+    if (user) {
+      const currentAnime = animeList.find(a => a.id === id);
+      if (currentAnime) {
+        await saveAnimeToFirestore(user.uid, { ...currentAnime, rating });
       }
+    } else {
+      setAnimeList(prev => prev.map(a => a.id === id ? { ...a, rating } : a));
+    }
   };
 
   const handleAddAnime = async (title: string, currentEpisode: number) => {
@@ -538,7 +551,7 @@ const App: React.FC = () => {
       currentEpisode,
       status: AnimeStatus.WATCHING
     };
-    
+
     // Optimistic Update (Guest) or UI Feedback
     if (!user) setAnimeList(prev => [newAnime, ...prev]);
 
@@ -555,7 +568,7 @@ const App: React.FC = () => {
       if (user) {
         await saveAnimeToFirestore(user.uid, enrichedAnime);
       } else {
-         setAnimeList(prev => prev.map(a => a.id === tempId ? enrichedAnime : a));
+        setAnimeList(prev => prev.map(a => a.id === tempId ? enrichedAnime : a));
       }
 
     } catch (e) {
@@ -578,22 +591,22 @@ const App: React.FC = () => {
   }
 
   if (currentView === ViewState.AUTH) {
-    return <AuthView onLogin={() => {}} onViewPrivacy={() => setView(ViewState.PRIVACY_POLICY)} />;
+    return <AuthView onLogin={() => { }} onViewPrivacy={() => setView(ViewState.PRIVACY_POLICY)} />;
   }
 
   return (
-    <Layout 
-      currentView={currentView} 
-      setView={setView} 
+    <Layout
+      currentView={currentView}
+      setView={setView}
       onLogout={() => {
         logoutUser();
         setView(ViewState.AUTH);
       }}
     >
       {currentView === ViewState.DASHBOARD && (
-        <DashboardView 
-          animeList={animeList} 
-          onUpdateAnime={handleUpdateAnime} 
+        <DashboardView
+          animeList={animeList}
+          onUpdateAnime={handleUpdateAnime}
           onAddAnime={handleAddAnime}
           onRateAnime={handleRateAnime}
         />
