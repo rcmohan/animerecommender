@@ -3,7 +3,7 @@ import { Anime, Recommendation } from "../types";
 
 // Helper to get AI instance safely
 const getAI = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("API Key missing");
     throw new Error("API Key is required");
@@ -44,7 +44,7 @@ export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    
+    console.log(text);
     return JSON.parse(text);
 
   } catch (error) {
@@ -61,7 +61,7 @@ export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number
 export const getCompletionProbability = async (animeTitle: string, userLikes: string[]): Promise<{ probability: number; reason: string }> => {
   try {
     const ai = getAI();
-    
+
     const prompt = `
       The user wants to watch "${animeTitle}".
       User previously liked: ${userLikes.join(", ")}.
@@ -87,6 +87,7 @@ export const getCompletionProbability = async (animeTitle: string, userLikes: st
     });
 
     const text = response.text;
+    console.log(text);
     if (!text) return { probability: 50, reason: "AI is sleeping." };
     return JSON.parse(text);
 
@@ -98,9 +99,9 @@ export const getCompletionProbability = async (animeTitle: string, userLikes: st
 export const getRecommendations = async (watched: Anime[], likes: string[], dislikes: string[]): Promise<Recommendation[]> => {
   try {
     const ai = getAI();
-    
+
     const watchedTitles = watched.map(a => `${a.title} (${a.rating || 'unrated'})`).join(", ");
-    
+
     const prompt = `
       User History:
       Watched: ${watchedTitles}
@@ -146,14 +147,14 @@ export const getRecommendations = async (watched: Anime[], likes: string[], disl
 
 // Helper for 'Prevent Hold' motivation
 export const getMotivationalMessage = async (animeTitle: string): Promise<string> => {
-    try {
-        const ai = getAI();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
-        });
-        return response.text || "Don't give up now, the best part is coming!";
-    } catch (e) {
-        return "Don't give up now, the best part is coming!";
-    }
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
+    });
+    return response.text || "Don't give up now, the best part is coming!";
+  } catch (e) {
+    return "Don't give up now, the best part is coming!";
+  }
 }

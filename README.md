@@ -25,7 +25,10 @@ I want to build a website that helps users manage the anime they watch.
 Create a modern website. Use purple, pink, red shades but ensure it is aesthetically pleasing. The page should have samples that show what each feature does. 
 Also add a registration page.  Create something modern-looking, aesthetic, new and fresh.
 
+```
+
 ## Second Prompt - corresponds to the current state of the Github Commit
+
 ```
 Starting from the website code you generated in the previous response (the anime management site with features for tracking episodes, arc completion, finish probability, ratings, likes/dislikes, recommendations, and a modern UI in purple/pink/red shades with feature samples), make the following additions and improvements to implement user registration and data persistence:
 
