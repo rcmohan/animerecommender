@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Card, Button, Input } from './Shared';
+import { Button, Input } from './Shared';
 import { 
   auth, 
   initializeUserDoc, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword 
 } from '../services/firebase';
-import { AlertCircle, Check, Tv } from 'lucide-react';
+import { AlertCircle, Check, Tv, ArrowRight, Sparkles } from 'lucide-react';
 
 interface AuthProps {
   onLogin: () => void;
@@ -48,11 +48,10 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      onLogin(); // Parent component handles redirection via auth listener
+      onLogin(); 
     } catch (err: any) {
       console.error("Auth Error:", err);
       let msg = "An error occurred.";
-      // Mock errors are not specific, but we handle standard ones if we were throwing them
       if (err.message) msg = err.message;
       setError(msg);
     } finally {
@@ -61,129 +60,114 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Aesthetic Background */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-900/30 rounded-full blur-[80px]"></div>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/20 rounded-full blur-[150px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-pink-900/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05]"></div>
       </div>
       
-      <div className="relative z-10 w-full max-w-4xl grid md:grid-cols-2 gap-0 rounded-2xl overflow-hidden shadow-2xl shadow-pink-900/20 border border-white/5 bg-zinc-900/80 backdrop-blur-xl">
-        
-        {/* Left Side: Illustration/Brand */}
-        <div className="hidden md:flex flex-col justify-center items-center p-12 bg-gradient-to-br from-pink-950 via-zinc-900 to-black text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30">
-            <Tv size={40} className="text-white" />
+      <div className="relative z-10 w-full max-w-[420px]">
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-600 shadow-[0_0_40px_rgba(236,72,153,0.4)] mb-6 transform rotate-3 hover:rotate-6 transition-transform">
+            <Tv size={32} className="text-white" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tighter mb-4">Ani<span className="text-pink-500">Pink</span></h1>
-          <p className="text-zinc-400 mb-8 max-w-xs">
-            Track your arcs, predict your journey, and discover your next obsession.
-          </p>
-          <div className="flex gap-2">
-            {[1,2,3].map(i => (
-              <div key={i} className="w-2 h-2 rounded-full bg-zinc-700 data-[active=true]:bg-pink-500 data-[active=true]:scale-125 transition-all" data-active={i===1}></div>
-            ))}
-          </div>
+          <h1 className="text-5xl font-display font-bold tracking-tighter text-white mb-2 text-glow">
+            Ani<span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500">Pink</span>
+          </h1>
+          <p className="text-zinc-400 text-lg">Your anime journey, elevated.</p>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="p-8 md:p-12 flex flex-col justify-center">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {isRegistering ? "Start Your Journey" : "Welcome Back"}
-            </h2>
-            <p className="text-sm text-zinc-400">
-              {isRegistering ? "Create an account to sync your watchlist." : "Enter the void to continue tracking."}
-            </p>
-          </div>
+        {/* Auth Card */}
+        <div className="glass-card rounded-3xl p-8 backdrop-blur-xl border border-white/10 shadow-2xl relative overflow-hidden">
           
-          <div className="space-y-4">
+          {/* Top Tabs */}
+          <div className="flex gap-2 p-1 bg-black/20 rounded-xl mb-8">
+            <button 
+              onClick={() => { setIsRegistering(false); setError(null); }}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isRegistering ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Sign In
+            </button>
+            <button 
+              onClick={() => { setIsRegistering(true); setError(null); }}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isRegistering ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Register
+            </button>
+          </div>
+
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Email</label>
               <Input 
                 type="email" 
-                placeholder="senpai@example.com" 
+                placeholder="Email Address" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="bg-black/30"
               />
             </div>
             
             <div>
-              <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Password</label>
               <Input 
                 type="password" 
-                placeholder="••••••••" 
+                placeholder="Password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="bg-black/30"
               />
             </div>
 
             {isRegistering && (
-              <>
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Confirm Password</label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    Must be at least 8 characters. Include numbers and symbols for better security.
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                   <div className="relative flex items-center">
+              <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-5">
+                <Input 
+                  type="password" 
+                  placeholder="Confirm Password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="bg-black/30"
+                />
+                
+                <label className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group">
+                   <div className="relative mt-0.5">
                       <input 
                         type="checkbox" 
-                        id="consent" 
-                        className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-zinc-700 bg-zinc-900 transition-all checked:border-pink-500 checked:bg-pink-500"
+                        className="peer sr-only"
                         checked={consent}
                         onChange={(e) => setConsent(e.target.checked)}
                       />
-                      <Check size={14} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100" />
+                      <div className="w-5 h-5 rounded border border-zinc-600 bg-black/50 peer-checked:bg-pink-500 peer-checked:border-pink-500 transition-all"></div>
+                      <Check size={14} className="absolute inset-0 m-auto text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
                    </div>
-                   <label htmlFor="consent" className="text-xs text-zinc-400 cursor-pointer select-none">
-                     I consent to AniPink storing my data (email, preferences, history) for app functionality. 
-                     Data is stored securely. View <button onClick={onViewPrivacy} className="text-pink-500 underline hover:text-pink-400">Privacy Policy</button>.
-                   </label>
-                </div>
-              </>
+                   <span className="text-xs text-zinc-400 leading-relaxed">
+                     I agree to the <span className="text-pink-400 group-hover:text-pink-300">Privacy Policy</span> and consent to data processing for app features.
+                   </span>
+                </label>
+              </div>
             )}
 
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-sm">
-                <AlertCircle size={16} />
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-xs animate-in shake duration-300">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 {error}
               </div>
             )}
 
-            <Button onClick={handleSubmit} className="w-full mt-2" disabled={loading}>
-              {loading ? "Processing..." : (isRegistering ? "Create Account" : "Sign In")}
+            <Button onClick={handleSubmit} className="w-full h-12 text-lg" disabled={loading}>
+              {loading ? <Sparkles className="animate-spin" /> : (isRegistering ? "Start Tracking" : "Enter Portal")}
+              {!loading && <ArrowRight size={18} />}
             </Button>
           </div>
-
-          <div className="mt-6 pt-6 border-t border-white/5 text-center">
-            <p className="text-sm text-zinc-500">
-              {isRegistering ? "Already have an account? " : "New to AniPink? "}
-              <button 
-                onClick={() => {
-                  setIsRegistering(!isRegistering);
-                  setError(null);
-                }} 
-                className="text-pink-500 font-medium hover:text-pink-400 transition-colors"
-              >
-                {isRegistering ? "Sign In" : "Register Now"}
-              </button>
-            </p>
-          </div>
         </div>
-      </div>
-      
-      {/* Footer Links */}
-      <div className="absolute bottom-4 left-0 w-full text-center">
-         <button onClick={onViewPrivacy} className="text-xs text-zinc-600 hover:text-zinc-400">Privacy Policy</button>
+        
+        {/* Footer */}
+        <div className="mt-8 text-center space-y-4">
+          <button onClick={onViewPrivacy} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-medium">
+            Privacy Policy
+          </button>
+        </div>
       </div>
     </div>
   );
