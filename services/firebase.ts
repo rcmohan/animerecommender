@@ -1,174 +1,134 @@
+
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  createUserWithEmailAndPassword as firebaseCreateUser,
+  signInWithEmailAndPassword as firebaseSignIn,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  onSnapshot,
+  collection,
+  updateDoc
+} from "firebase/firestore";
 import { Anime, UserProfile } from "../types";
 
-// Mock User Interface matching Firebase User minimally
-export interface User {
-  uid: string;
-  email: string | null;
-}
+// --- CONFIGURATION ---
+// TODO: Replace with your actual Firebase project configuration
 
-// Mock Auth State
-let currentUser: User | null = null;
-let authListener: ((user: User | null) => void) | null = null;
-
-// Simple Event Emitter for Data subscriptions
-const listeners: Record<string, ((data: any) => void)[]> = {};
-
-const emitChange = (key: string, data: any) => {
-  if (listeners[key]) {
-    listeners[key].forEach(cb => cb(data));
-  }
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: "anipink-app.firebaseapp.com",
+  projectId: "anipink-app",
+  storageBucket: "anipink-app.firebasestorage.app",
+  messagingSenderId: "944523240658",
+  appId: "1:944523240658:web:0094b1016563278d20790b",
+  measurementId: "G-ES6WS9RW3B"
 };
 
-const subscribe = (key: string, callback: (data: any) => void) => {
-  if (!listeners[key]) listeners[key] = [];
-  listeners[key].push(callback);
-  return () => {
-    listeners[key] = listeners[key].filter(cb => cb !== callback);
-  };
-};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Initialize state from LocalStorage
-const STORAGE_KEY_USER = 'anipink_user';
-
-if (typeof localStorage !== 'undefined') {
-  const saved = localStorage.getItem(STORAGE_KEY_USER);
-  if (saved) {
-    try {
-      currentUser = JSON.parse(saved);
-    } catch (e) {
-      console.error("Failed to parse saved user", e);
-    }
-  }
-}
-
-// Helper to trigger listener
-const notifyAuth = () => {
-  if (authListener) authListener(currentUser);
-};
-
-// Exported Auth Object (Mock)
-export const auth = {
-  get currentUser() { return currentUser; }
-};
+// --- TYPES ---
+// Re-export or define User type to match usage in App
+export type User = FirebaseUser;
 
 // --- AUTH SERVICES ---
 
 export const subscribeToAuth = (callback: (user: User | null) => void) => {
-  authListener = callback;
-  // Trigger immediately
-  setTimeout(() => callback(currentUser), 0);
-  return () => { authListener = null; };
+  return onAuthStateChanged(auth, callback);
 };
 
 export const logoutUser = async () => {
-  currentUser = null;
-  localStorage.removeItem(STORAGE_KEY_USER);
-  notifyAuth();
+  await signOut(auth);
 };
 
-export const createUserWithEmailAndPassword = async (_auth: any, email: string, _pass: string) => {
-  await new Promise(r => setTimeout(r, 800)); // Simulate network
-  const uid = 'user_' + Date.now();
-  const user = { uid, email };
-  currentUser = user;
-  localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-  notifyAuth();
-  return { user };
-};
-
-export const signInWithEmailAndPassword = async (_auth: any, email: string, _pass: string) => {
-  await new Promise(r => setTimeout(r, 800)); // Simulate network
-  // Generate a consistent UID for the same email to simulate persistent account
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) {
-    hash = ((hash << 5) - hash) + email.charCodeAt(i);
-    hash |= 0;
-  }
-  const uid = 'user_' + Math.abs(hash);
-  const user = { uid, email };
-  
-  currentUser = user;
-  localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-  notifyAuth();
-  return { user };
+// We export these directly as they match the signature (auth, email, password)
+export {
+  firebaseCreateUser as createUserWithEmailAndPassword,
+  firebaseSignIn as signInWithEmailAndPassword
 };
 
 // --- DATA SERVICES ---
 
 export const initializeUserDoc = async (user: User) => {
-  const key = `anipink_profile_${user.uid}`;
-  const saved = localStorage.getItem(key);
-  if (!saved) {
-    const profile: UserProfile = {
-      username: user.email?.split('@')[0] || "AnimeFan",
-      likes: [],
-      dislikes: [],
-      uid: user.uid
-    };
-    localStorage.setItem(key, JSON.stringify(profile));
-    // No emit needed yet as no one is subscribed
+  if (!user) return;
+  const userRef = doc(db, "users", user.uid, "profile", "main");
+
+  try {
+    const docSnap = await getDoc(userRef);
+    if (!docSnap.exists()) {
+      const profile: UserProfile = {
+        username: user.email?.split('@')[0] || "AnimeFan",
+        likes: [],
+        dislikes: [],
+        uid: user.uid
+      };
+      // Use setDoc to create
+      await setDoc(userRef, profile);
+    }
+  } catch (e) {
+    console.error("Error initializing user doc:", e);
   }
 };
 
 export const subscribeToAnimeList = (uid: string, callback: (list: Anime[]) => void) => {
-  const key = `anipink_anime_${uid}`;
-  
-  const load = () => {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
-  };
+  const q = collection(db, "users", uid, "animeList");
 
-  // Initial load
-  callback(load());
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const list: Anime[] = [];
+    snapshot.forEach((doc) => {
+      // Assuming the doc data is the Anime object
+      list.push(doc.data() as Anime);
+    });
+    callback(list);
+  }, (error) => {
+    console.error("Error subscribing to anime list:", error);
+    callback([]);
+  });
 
-  // Subscribe to changes
-  return subscribe(key, callback);
+  return unsubscribe;
 };
 
 export const subscribeToProfile = (uid: string, callback: (profile: UserProfile) => void) => {
-  const key = `anipink_profile_${uid}`;
-  
-  const load = () => {
-    const data = localStorage.getItem(key);
-    if (data) {
-      return { uid, ...JSON.parse(data) };
+  const docRef = doc(db, "users", uid, "profile", "main");
+
+  const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback({ uid, ...docSnap.data() } as UserProfile);
+    } else {
+      // Fallback if profile doesn't exist yet (should exist if triggered by Auth)
+      callback({
+        uid,
+        username: 'Guest',
+        likes: [],
+        dislikes: []
+      });
     }
-    return {
-      uid,
-      username: 'Guest',
-      likes: [],
-      dislikes: []
-    };
-  };
+  }, (error) => {
+    console.error("Error subscribing to profile:", error);
+  });
 
-  // Initial load
-  callback(load());
-
-  return subscribe(key, callback);
+  return unsubscribe;
 };
 
 export const saveAnimeToFirestore = async (uid: string, anime: Anime) => {
-  const key = `anipink_anime_${uid}`;
-  const data = localStorage.getItem(key);
-  const list: Anime[] = data ? JSON.parse(data) : [];
-
-  const index = list.findIndex(a => a.id === anime.id);
-  if (index >= 0) {
-    list[index] = { ...list[index], ...anime };
-  } else {
-    list.push(anime);
-  }
-  
-  localStorage.setItem(key, JSON.stringify(list));
-  emitChange(key, list); // Trigger update immediately
+  if (!uid || !anime.id) return;
+  const animeRef = doc(db, "users", uid, "animeList", anime.id);
+  // Use setDoc with merge to create or update
+  await setDoc(animeRef, anime, { merge: true });
 };
 
 export const updateUserProfileFirestore = async (uid: string, updates: Partial<UserProfile>) => {
-  const key = `anipink_profile_${uid}`;
-  const data = localStorage.getItem(key);
-  let profile = data ? JSON.parse(data) : { likes: [], dislikes: [] };
-  
-  profile = { ...profile, ...updates };
-  localStorage.setItem(key, JSON.stringify(profile));
-  emitChange(key, profile); // Trigger update immediately
+  const profileRef = doc(db, "users", uid, "profile", "main");
+  // Use setDoc with merge to safe update even if fields are missing
+  await setDoc(profileRef, updates, { merge: true });
 };
