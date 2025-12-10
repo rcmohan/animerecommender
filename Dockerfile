@@ -3,7 +3,6 @@ FROM node:20 AS builder
 WORKDIR /app
 
 # Copy package files (handling both package.json and package-lock.json if it exists)
-# Copy package files (handling both package.json and package-lock.json if it exists)
 COPY package*.json ./
 RUN npm ci
 
