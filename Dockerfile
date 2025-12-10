@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy package files (handling both package.json and package-lock.json if it exists)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci && npm install @rollup/rollup-linux-x64-gnu --save-optional
 
 # Copy source code
 COPY . .
