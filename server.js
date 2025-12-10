@@ -96,7 +96,14 @@ app.use(express.static(distPath));
 // Handle client-side routing, return all requests to index.html
 // Handle client-side routing, return all requests to index.html
 app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    console.log(`Serving index.html from: ${indexPath} for request: ${req.url}`);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error("Error serving index.html:", err);
+            res.status(500).send("Error loading application.");
+        }
+    });
 });
 
 const PORT = process.env.PORT || 8080;
