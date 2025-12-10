@@ -1,12 +1,11 @@
 # Stage 1: Build the frontend
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 WORKDIR /app
 
 # Copy package files (handling both package.json and package-lock.json if it exists)
 # Copy package files (handling both package.json and package-lock.json if it exists)
 COPY package*.json ./
-# Install dependencies including the optional rollup binary for Alpine (musl)
-RUN npm ci && npm install @rollup/rollup-linux-x64-musl --save-optional
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -25,7 +24,7 @@ ENV GEMINI_API_KEY=$GEMINI_API_KEY
 RUN npm run build
 
 # Stage 2: Runtime environment
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
