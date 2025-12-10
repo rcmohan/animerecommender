@@ -20,6 +20,10 @@ ARG GEMINI_API_KEY
 ENV FIREBASE_API_KEY=$FIREBASE_API_KEY
 ENV GEMINI_API_KEY=$GEMINI_API_KEY
 
+RUN echo "DEBUG CHECKS:" && \
+    echo "  - FIREBASE_API_KEY provided? $(if [ -n "$FIREBASE_API_KEY" ]; then echo "YES"; else echo "NO"; fi)" && \
+    echo "  - GEMINI_API_KEY provided?   $(if [ -n "$GEMINI_API_KEY" ]; then echo "YES"; else echo "NO"; fi)"
+
 RUN npm run build
 
 # Stage 2: Runtime environment
