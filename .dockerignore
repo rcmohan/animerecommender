@@ -1,0 +1,9 @@
+node_modules
+dist
+.env.local
+.git
+.gitignore
+README.md
+cloud_build_plan.md
+test-firestore.js
+metadata.json
