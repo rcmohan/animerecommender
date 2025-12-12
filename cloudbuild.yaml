@@ -1,37 +1,37 @@
 steps:
   # 1. Build the Docker image
-  # 0. Check for required substitution variables
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
+  # We use 'sh -c' to explicitly handle variable expansion and debugging
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'sh'
     args:
       - '-c'
       - |
-        if [ -z "$_FIREBASE_API_KEY" ] || [ -z "$_GEMINI_API_KEY" ]; then
-          echo "*****************************************************************"
-          echo "ERROR: API Keys are missing!"
-          echo "  _FIREBASE_API_KEY provided? $(if [ -n "$_FIREBASE_API_KEY" ]; then echo "YES"; else echo "NO"; fi)"
-          echo "  _GEMINI_API_KEY provided?   $(if [ -n "$_GEMINI_API_KEY" ]; then echo "YES"; else echo "NO"; fi)"
-          echo ""
-          echo "Fix:"
-          echo "1. If using a Trigger: Ensure the variables are defined in the Trigger settings."
-          echo "2. If using CLI: Use 'gcloud builds submit --substitutions=_FIREBASE_API_KEY=...,_GEMINI_API_KEY=...'"
-          echo "*****************************************************************"
+        echo "*****************************************************************"
+        echo "DEBUG: Verifying Build Arguments..."
+        
+        # Check variables and print lengths (masking values)
+        if [ -z "$_FIREBASE_API_KEY" ]; then 
+          echo "ERROR: _FIREBASE_API_KEY is empty or missing!"
           exit 1
         else
-          echo "Build Check: Substitution variables are present."
+          echo "OK: _FIREBASE_API_KEY is set (length=$(echo -n $_FIREBASE_API_KEY | wc -c))"
         fi
 
-  # 1. Build the Docker image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: 
-      - 'build'
-      - '--build-arg'
-      - 'FIREBASE_API_KEY=$_FIREBASE_API_KEY'
-      - '--build-arg'
-      - 'GEMINI_API_KEY=$_GEMINI_API_KEY'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/anipink-anime-manager:$COMMIT_SHA'
-      - '.'
+        if [ -z "$_GEMINI_API_KEY" ]; then 
+          echo "ERROR: _GEMINI_API_KEY is empty or missing!"
+          exit 1
+        else
+          echo "OK: _GEMINI_API_KEY is set (length=$(echo -n $_GEMINI_API_KEY | wc -c))"
+        fi
+        
+        echo "*****************************************************************"
+        echo "Starting Docker Build..."
+        
+        docker build \
+          --build-arg FIREBASE_API_KEY="${_FIREBASE_API_KEY}" \
+          --build-arg GEMINI_API_KEY="${_GEMINI_API_KEY}" \
+          -t gcr.io/$PROJECT_ID/anipink-anime-manager:$COMMIT_SHA \
+          .
 
   # 2. Push the image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -50,7 +50,7 @@ steps:
       - 'us-west1'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated' # Or authenticated, depending on preference. Public web apps usually allow unauth.
+      - '--allow-unauthenticated'
 
 images:
   - 'gcr.io/$PROJECT_ID/anipink-anime-manager:$COMMIT_SHA'
