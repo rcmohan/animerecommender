@@ -78,7 +78,7 @@ const DashboardView = ({
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700">
-
+      
       {/* Hero Section */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-pink-900/40 via-purple-900/40 to-indigo-900/40 border border-white/10 p-8 md:p-12">
         <div className="absolute top-0 right-0 p-8 opacity-20">
@@ -91,7 +91,7 @@ const DashboardView = ({
           <p className="text-lg text-zinc-300 mb-8 font-light">
             You've watched <span className="text-white font-bold">{completed.length}</span> series and are currently tracking <span className="text-white font-bold">{watching.length}</span> active journeys.
           </p>
-
+          
           <div className="flex flex-col sm:flex-row gap-4 bg-black/30 backdrop-blur-md p-4 rounded-2xl border border-white/5 inline-flex">
             <Input
               placeholder="Start tracking a new anime..."
@@ -99,13 +99,13 @@ const DashboardView = ({
               onChange={(e) => setNewTitle(e.target.value)}
               className="min-w-[200px] border-none bg-transparent"
             />
-            <Input
-              type="number"
-              placeholder="Ep 1"
-              className="w-20 border-none bg-transparent"
-              value={newEp}
-              onChange={(e) => setNewEp(e.target.value)}
-            />
+             <Input
+                type="number"
+                placeholder="Ep 1"
+                className="w-20 border-none bg-transparent"
+                value={newEp}
+                onChange={(e) => setNewEp(e.target.value)}
+              />
             <Button onClick={handleAdd} disabled={loading} variant="primary">
               {loading ? <Sparkles className="animate-spin" size={18} /> : <Plus size={18} />}
               <span>Track</span>
@@ -123,7 +123,7 @@ const DashboardView = ({
             <Card key={anime.id} hoverEffect className="relative group overflow-hidden">
               {/* Decorative Background for Card */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-purple-600"></div>
-
+              
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-display font-bold text-xl text-white line-clamp-1">{anime.title}</h3>
@@ -134,18 +134,18 @@ const DashboardView = ({
                     )}
                   </div>
                 </div>
-
+                
                 {/* Rating Input Hidden by default, shown on hover/focus could be cleaner but kept simple here */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-lg p-1 backdrop-blur-sm">
-                  <select
-                    className="bg-transparent text-white text-xs outline-none cursor-pointer"
-                    value={anime.rating || ''}
-                    onChange={(e) => onRateAnime(anime.id, parseInt(e.target.value))}
-                  >
-                    <option value="">Rate</option>
-                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
+                 <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-lg p-1 backdrop-blur-sm">
+                    <select
+                      className="bg-transparent text-white text-xs outline-none cursor-pointer"
+                      value={anime.rating || ''}
+                      onChange={(e) => onRateAnime(anime.id, parseInt(e.target.value))}
+                    >
+                      <option value="">Rate</option>
+                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                 </div>
               </div>
 
               {/* Arc Info */}
@@ -162,9 +162,9 @@ const DashboardView = ({
                       <span>{anime.episodesToArcEnd} eps left</span>
                     </div>
                     <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                      <div
+                      <div 
                         className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-1000 shadow-[0_0_10px_rgba(236,72,153,0.5)]"
-                        style={{ width: `${Math.max(5, 100 - (anime.episodesToArcEnd * 5))}%` }}
+                        style={{ width: `${Math.max(5, 100 - (anime.episodesToArcEnd * 5))}%` }} 
                       ></div>
                     </div>
                   </div>
@@ -173,17 +173,17 @@ const DashboardView = ({
 
               {/* Actions */}
               <div className="flex items-center gap-3">
-                <Button
-                  onClick={() => onUpdateAnime(anime.id, anime.currentEpisode + 1)}
+                <Button 
+                  onClick={() => onUpdateAnime(anime.id, anime.currentEpisode + 1)} 
                   className="flex-1 py-2 text-sm"
                   variant="primary"
                 >
                   <Plus size={16} /> Episode {anime.currentEpisode + 1}
                 </Button>
-                <button
-                  onClick={() => attemptHold(anime.title)}
-                  className="p-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
-                  title="Put on hold"
+                <button 
+                   onClick={() => attemptHold(anime.title)}
+                   className="p-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+                   title="Put on hold"
                 >
                   <Calendar size={18} />
                 </button>
@@ -192,12 +192,12 @@ const DashboardView = ({
           ))}
 
           {watching.length === 0 && (
-            <div className="col-span-full py-16 text-center border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
-              <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-600">
-                <Tv size={32} />
-              </div>
-              <h3 className="text-zinc-400 font-medium">No active anime. Start something new above!</h3>
-            </div>
+             <div className="col-span-full py-16 text-center border border-dashed border-zinc-800 rounded-3xl bg-zinc-900/20">
+                <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-600">
+                   <Tv size={32} />
+                </div>
+                <h3 className="text-zinc-400 font-medium">No active anime. Start something new above!</h3>
+             </div>
           )}
         </div>
       </div>
@@ -212,10 +212,10 @@ const DashboardView = ({
             <h3 className="text-2xl font-display font-bold text-white mb-2">Chotto matte!</h3>
             <p className="text-lg text-pink-200 mb-8 italic font-light">"{showHoldWarning}"</p>
             <div className="flex gap-3">
-              <Button onClick={() => setShowHoldWarning(null)} className="w-full">
+               <Button onClick={() => setShowHoldWarning(null)} className="w-full">
                 I'll keep watching!
               </Button>
-              <Button onClick={() => setShowHoldWarning(null)} variant="ghost" className="w-full">
+               <Button onClick={() => setShowHoldWarning(null)} variant="ghost" className="w-full">
                 Fine...
               </Button>
             </div>
@@ -243,7 +243,7 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
     <div className="max-w-3xl mx-auto py-10 animate-in slide-in-from-bottom-8 duration-700">
       <div className="text-center space-y-4 mb-12">
         <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 mb-4 border border-indigo-500/20">
-          <BrainCircuit size={32} />
+           <BrainCircuit size={32} />
         </div>
         <h1 className="text-4xl md:text-5xl font-display font-bold text-white">Will You Finish It?</h1>
         <p className="text-lg text-zinc-400 max-w-lg mx-auto leading-relaxed">
@@ -268,9 +268,9 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
           <Card className="relative text-center py-16 px-8 bg-zinc-900 border-pink-500/30">
             <div className="mb-6 text-zinc-500 uppercase tracking-[0.2em] text-xs font-bold">Completion Probability</div>
-
+            
             <div className="relative inline-block">
-              <div className="text-8xl md:text-9xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500 mb-8 relative z-10">
+               <div className="text-8xl md:text-9xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500 mb-8 relative z-10">
                 {result.probability}%
               </div>
               {/* Glow behind number */}
@@ -369,11 +369,11 @@ const ProfileView = ({
             <div className="flex flex-wrap gap-2">
               {userProfile.dislikes.map(dislike => (
                 <Badge key={dislike} variant="pink">
-                  {dislike}
+                   {dislike}
                   <button onClick={() => onUpdateProfile({ dislikes: userProfile.dislikes.filter(i => i !== dislike) })} className="ml-1 hover:text-white"><X size={10} /></button>
                 </Badge>
               ))}
-              {userProfile.dislikes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
+               {userProfile.dislikes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
             </div>
           </Card>
         </div>
@@ -442,7 +442,7 @@ const RecommendationsView = ({
                   <Badge variant="pink">{rec.matchScore}% Match</Badge>
                 </div>
                 <div className="p-4 bg-zinc-900/50 rounded-xl mb-4 border border-white/5">
-                  <p className="text-zinc-300 text-sm leading-relaxed italic">"{rec.reason}"</p>
+                   <p className="text-zinc-300 text-sm leading-relaxed italic">"{rec.reason}"</p>
                 </div>
               </div>
               <Button variant="secondary" className="w-full text-sm mt-4">Add to Plan to Watch</Button>
@@ -453,7 +453,7 @@ const RecommendationsView = ({
         !loading && (
           <div className="text-center py-24 glass-card rounded-3xl border-dashed border-zinc-800">
             <div className="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-600">
-              <Sparkles size={40} />
+               <Sparkles size={40} />
             </div>
             <h3 className="text-xl text-white font-medium mb-2">Ready to explore?</h3>
             <p className="text-zinc-500">Click the button above to analyze your viewing matrix.</p>
@@ -485,11 +485,6 @@ const App: React.FC = () => {
         setUser(null);
         setView(prev => prev !== ViewState.PRIVACY_POLICY ? ViewState.AUTH : prev);
         setAnimeList(SAMPLE_ANIME);
-        setUserProfile({
-          username: 'Guest',
-          likes: [],
-          dislikes: []
-        });
       }
     });
     return () => unsubscribe();
@@ -544,7 +539,7 @@ const App: React.FC = () => {
   const handleAddAnime = async (title: string, currentEpisode: number) => {
     const tempId = Date.now().toString();
     const newAnime: Anime = { id: tempId, title, currentEpisode, status: AnimeStatus.WATCHING };
-
+    
     if (!user) setAnimeList(prev => [newAnime, ...prev]);
 
     try {
