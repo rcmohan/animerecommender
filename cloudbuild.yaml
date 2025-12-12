@@ -1,5 +1,27 @@
 steps:
   # 1. Build the Docker image
+  # 0. Check for required substitution variables
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ -z "$_FIREBASE_API_KEY" ] || [ -z "$_GEMINI_API_KEY" ]; then
+          echo "*****************************************************************"
+          echo "ERROR: API Keys are missing!"
+          echo "  _FIREBASE_API_KEY provided? $(if [ -n "$_FIREBASE_API_KEY" ]; then echo "YES"; else echo "NO"; fi)"
+          echo "  _GEMINI_API_KEY provided?   $(if [ -n "$_GEMINI_API_KEY" ]; then echo "YES"; else echo "NO"; fi)"
+          echo ""
+          echo "Fix:"
+          echo "1. If using a Trigger: Ensure the variables are defined in the Trigger settings."
+          echo "2. If using CLI: Use 'gcloud builds submit --substitutions=_FIREBASE_API_KEY=...,_GEMINI_API_KEY=...'"
+          echo "*****************************************************************"
+          exit 1
+        else
+          echo "Build Check: Substitution variables are present."
+        fi
+
+  # 1. Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'build'
