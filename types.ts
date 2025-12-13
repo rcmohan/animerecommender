@@ -25,6 +25,7 @@ export interface Anime {
   rating?: number; // 1-10
   currentArc?: string;
   episodesToArcEnd?: number;
+  pendingLookup?: boolean;
 }
 
 export interface UserProfile {

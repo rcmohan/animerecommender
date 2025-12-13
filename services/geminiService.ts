@@ -11,16 +11,17 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number): Promise<{ currentArc: string; episodesToArcEnd: number; totalEpisodes: number }> => {
+export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number): Promise<{ currentArc: string; episodesToArcEnd: number; totalEpisodes: number, correctTitle?: string } | null> => {
   try {
     const ai = getAI();
     const model = ai.models;
 
     const prompt = `
       For the anime "${animeTitle}", looking at episode ${currentEpisode}:
-      1. What is the name of the current story arc?
-      2. How many episodes are left until this specific arc ends?
-      3. What is the total number of episodes currently released/planned?
+      1. What is the OFFICIAL canonical English title of this anime?
+      2. What is the name of the current story arc?
+      3. How many episodes are left until this specific arc ends?
+      4. What is the total number of episodes currently released/planned?
       
       Return JSON.
     `;
@@ -33,35 +34,32 @@ export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            correctTitle: { type: Type.STRING },
             currentArc: { type: Type.STRING },
             episodesToArcEnd: { type: Type.NUMBER },
             totalEpisodes: { type: Type.NUMBER },
           },
-          required: ["currentArc", "episodesToArcEnd", "totalEpisodes"]
+          required: ["correctTitle", "currentArc", "episodesToArcEnd", "totalEpisodes"]
         }
       }
     });
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    
+
     return JSON.parse(text);
 
   } catch (error) {
     console.error("Error fetching arc info:", error);
-    // Fallback mock data if API fails or key is missing
-    return {
-      currentArc: "Unknown Arc",
-      episodesToArcEnd: 0,
-      totalEpisodes: 12
-    };
+    // Return null to signal "try later"
+    return null;
   }
 };
 
 export const getCompletionProbability = async (animeTitle: string, userLikes: string[]): Promise<{ probability: number; reason: string }> => {
   try {
     const ai = getAI();
-    
+
     const prompt = `
       The user wants to watch "${animeTitle}".
       User previously liked: ${userLikes.join(", ")}.
@@ -98,9 +96,9 @@ export const getCompletionProbability = async (animeTitle: string, userLikes: st
 export const getRecommendations = async (watched: Anime[], likes: string[], dislikes: string[]): Promise<Recommendation[]> => {
   try {
     const ai = getAI();
-    
+
     const watchedTitles = watched.map(a => `${a.title} (${a.rating || 'unrated'})`).join(", ");
-    
+
     const prompt = `
       User History:
       Watched: ${watchedTitles}
@@ -146,14 +144,14 @@ export const getRecommendations = async (watched: Anime[], likes: string[], disl
 
 // Helper for 'Prevent Hold' motivation
 export const getMotivationalMessage = async (animeTitle: string): Promise<string> => {
-    try {
-        const ai = getAI();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
-        });
-        return response.text || "Don't give up now, the best part is coming!";
-    } catch (e) {
-        return "Don't give up now, the best part is coming!";
-    }
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
+    });
+    return response.text || "Don't give up now, the best part is coming!";
+  } catch (e) {
+    return "Don't give up now, the best part is coming!";
+  }
 }

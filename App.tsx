@@ -296,9 +296,11 @@ const PredictorView = ({ userProfile }: { userProfile: UserProfile }) => {
 
 const ProfileView = ({
   userProfile,
+  animeList,
   onUpdateProfile
 }: {
   userProfile: UserProfile,
+  animeList: Anime[],
   onUpdateProfile: (updates: Partial<UserProfile>) => void
 }) => {
   const [inputLike, setInputLike] = useState('');
@@ -318,11 +320,41 @@ const ProfileView = ({
     }
   };
 
+  const handleMove = (item: string, from: 'likes' | 'dislikes' | 'unrated', to: 'likes' | 'dislikes') => {
+    const updates: Partial<UserProfile> = {};
+
+    // Remove from source
+    if (from === 'likes') updates.likes = userProfile.likes.filter(i => i !== item);
+    if (from === 'dislikes') updates.dislikes = userProfile.dislikes.filter(i => i !== item);
+    // Note: 'unrated' logic is implicit; we don't remove anime from the main list here, just add to preferences.
+
+    // Add to target
+    if (to === 'likes') {
+      const existing = updates.likes || userProfile.likes;
+      if (!existing.includes(item)) updates.likes = [...existing, item];
+    }
+    if (to === 'dislikes') {
+      const existing = updates.dislikes || userProfile.dislikes;
+      if (!existing.includes(item)) updates.dislikes = [...existing, item];
+    }
+
+    onUpdateProfile(updates);
+  };
+
+  const removePreference = (item: string, type: 'likes' | 'dislikes') => {
+    onUpdateProfile({
+      [type]: userProfile[type].filter(i => i !== item)
+    });
+  };
+
+  // Dynamic Data Calculation
+  const unratedAnime = animeList.filter(a => !a.rating || a.rating === 0);
+
   const chartData = [
-    { name: 'Action', value: 12 },
-    { name: 'Romance', value: 5 },
-    { name: 'Sci-Fi', value: 8 },
-    { name: 'Fantasy', value: 15 },
+    { name: 'Watching', value: animeList.filter(a => a.status === AnimeStatus.WATCHING).length },
+    { name: 'Completed', value: animeList.filter(a => a.status === AnimeStatus.COMPLETED).length },
+    { name: 'Plan to Watch', value: animeList.filter(a => a.status === AnimeStatus.PLAN_TO_WATCH).length },
+    { name: 'Dropped', value: animeList.filter(a => a.status === AnimeStatus.DROPPED).length },
   ];
 
   return (
@@ -347,7 +379,10 @@ const ProfileView = ({
               {userProfile.likes.map(like => (
                 <Badge key={like} variant="green">
                   {like}
-                  <button onClick={() => onUpdateProfile({ likes: userProfile.likes.filter(i => i !== like) })} className="ml-1 hover:text-white"><X size={10} /></button>
+                  <div className="ml-2 pl-2 border-l border-green-500/30 flex gap-1">
+                      <button onClick={() => handleMove(like, 'likes', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
+                      <button onClick={() => removePreference(like, 'likes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
+                  </div>
                 </Badge>
               ))}
               {userProfile.likes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
@@ -370,11 +405,34 @@ const ProfileView = ({
               {userProfile.dislikes.map(dislike => (
                 <Badge key={dislike} variant="pink">
                   {dislike}
-                  <button onClick={() => onUpdateProfile({ dislikes: userProfile.dislikes.filter(i => i !== dislike) })} className="ml-1 hover:text-white"><X size={10} /></button>
+                  <div className="ml-2 pl-2 border-l border-red-500/30 flex gap-1">
+                      <button onClick={() => handleMove(dislike, 'dislikes', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
+                        <button onClick={() => removePreference(dislike, 'dislikes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
+                  </div>
                 </Badge>
               ))}
               {userProfile.dislikes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
             </div>
+          </Card>
+        </div>
+          {/* Not Rated / In Progress */}
+          <Card className="border-yellow-500/20 bg-yellow-950/5">
+             <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2"><Star size={18} /> Not Rated Yet</h3>
+             <div className="flex flex-wrap gap-2">
+              {unratedAnime.length > 0 ? (
+                unratedAnime.map(anime => (
+                  <Badge key={anime.id} variant="yellow">
+                    {anime.title}
+                     <div className="ml-2 pl-2 border-l border-yellow-500/30 flex gap-1">
+                        <button onClick={() => handleMove(anime.title, 'unrated', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
+                        <button onClick={() => handleMove(anime.title, 'unrated', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
+                     </div>
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-zinc-600 text-sm italic">All your anime are rated!</span>
+              )}
+             </div>
           </Card>
         </div>
       </div>
@@ -382,7 +440,7 @@ const ProfileView = ({
       <div className="space-y-8">
         <SectionTitle title="Analytics" icon={TrendingUp} />
         <Card className="h-96 flex flex-col justify-center bg-zinc-900/50">
-          <h3 className="text-center text-zinc-400 mb-6 font-display font-medium">Genre Distribution</h3>
+          <h3 className="text-center text-zinc-400 mb-6 font-display font-medium">Watch Status Distribution</h3>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -398,7 +456,7 @@ const ProfileView = ({
           </ResponsiveContainer>
         </Card>
       </div>
-    </div>
+    </div >
   );
 };
 
@@ -560,18 +618,51 @@ const App: React.FC = () => {
     if (!user) setAnimeList(prev => [newAnime, ...prev]);
 
     try {
-      const info = await getAnimeArcInfo(title, currentEpisode);
-      const enrichedAnime = {
-        ...newAnime,
-        currentArc: info.currentArc,
-        episodesToArcEnd: info.episodesToArcEnd,
-        totalEpisodes: info.totalEpisodes
-      };
+      // 1. Save immediately with basic info (Optimistic UI) called above if guest, but let's standardize.
+      // We'll update the 'user' flow to also save immediately or wait.
+      // Actually, standardizing:
 
-      if (user) await saveAnimeToFirestore(user.uid, enrichedAnime);
-      else setAnimeList(prev => prev.map(a => a.id === tempId ? enrichedAnime : a));
+      let enrichedAnime = { ...newAnime };
+
+      // 2. Try Gemini
+      const info = await getAnimeArcInfo(title, currentEpisode);
+
+      if (info) {
+        // SUCCESS
+        enrichedAnime = {
+          ...enrichedAnime,
+          title: info.correctTitle || title, // Use canonical title if available
+          currentArc: info.currentArc,
+          episodesToArcEnd: info.episodesToArcEnd,
+          totalEpisodes: info.totalEpisodes,
+          pendingLookup: false
+        };
+      } else {
+        // FAILURE / RETRY LATER
+        console.warn("Gemini lookup failed, marking for retry.");
+        enrichedAnime = {
+          ...enrichedAnime,
+          currentArc: "Unknown (Lookup Pending)",
+          episodesToArcEnd: 0,
+          pendingLookup: true
+        };
+      }
+
+      // 3. Save Final State
+      if (user) {
+        await saveAnimeToFirestore(user.uid, enrichedAnime);
+        // If we optimistically added to local state earlier for guest, we don't need to do anything else.
+        // But for logged in user, we should ensure the list updates. 
+        // Since we subscribe, writing to Firestore is enough.
+      } else {
+        // Guest mode
+        setAnimeList(prev => prev.map(a => a.id === tempId ? enrichedAnime : a));
+      }
+
     } catch (e) {
-      console.error(e);
+      console.error("Error adding anime:", e);
+      // Fallback save if completely broken
+      if (user) await saveAnimeToFirestore(user.uid, newAnime);
     }
   };
 
@@ -608,7 +699,7 @@ const App: React.FC = () => {
         <PredictorView userProfile={userProfile} />
       )}
       {currentView === ViewState.PROFILE && (
-        <ProfileView userProfile={userProfile} onUpdateProfile={handleUpdateProfile} />
+        <ProfileView userProfile={userProfile} animeList={animeList} onUpdateProfile={handleUpdateProfile} />
       )}
       {currentView === ViewState.RECOMMENDATIONS && (
         <RecommendationsView animeList={animeList} userProfile={userProfile} />
