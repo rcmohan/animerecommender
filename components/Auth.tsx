@@ -14,15 +14,16 @@ import ReCAPTCHA from "react-google-recaptcha";
 interface AuthProps {
   onLogin: () => void;
   onViewPrivacy: () => void;
+  initialError?: string | null;
 }
 
-export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
+export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy, initialError }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [consent, setConsent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [notification, setNotification] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);

@@ -5,7 +5,7 @@ import { Button, Input, Card, SectionTitle, Badge } from './components/Shared';
 import { AuthView } from './components/Auth';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { getAnimeArcInfo, getCompletionProbability, getRecommendations, getMotivationalMessage } from './services/geminiService';
-import { subscribeToAuth, subscribeToAnimeList, subscribeToProfile, saveAnimeToFirestore, updateUserProfileFirestore, logoutUser } from './services/firebase';
+import { subscribeToAuth, subscribeToAnimeList, subscribeToProfile, saveAnimeToFirestore, updateUserProfileFirestore, logoutUser, getUserStatus } from './services/firebase';
 import { Play, Plus, Star, X, Check, Brain, AlertCircle, BrainCircuit, Sparkles, TrendingUp, Calendar, Zap, Tv } from 'lucide-react';
 import {
   BarChart,
@@ -469,6 +469,7 @@ const RecommendationsView = ({
 const App: React.FC = () => {
   const [user, setUser] = useState<any | null>(null);
   const [currentView, setView] = useState<ViewState>(ViewState.AUTH);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [animeList, setAnimeList] = useState<Anime[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     username: 'Guest',
@@ -477,10 +478,21 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const unsubscribe = subscribeToAuth((firebaseUser) => {
+    const unsubscribe = subscribeToAuth(async (firebaseUser) => {
       if (firebaseUser) {
-        setUser(firebaseUser);
-        setView(prev => prev === ViewState.AUTH ? ViewState.DASHBOARD : prev);
+        // Enforce status check
+        const status = await getUserStatus(firebaseUser.uid);
+        if (status === 'active') {
+          setUser(firebaseUser);
+          setAuthError(null);
+          setView(prev => prev === ViewState.AUTH ? ViewState.DASHBOARD : prev);
+        } else {
+          console.warn(`User ${firebaseUser.uid} has status ${status}. Logging out.`);
+          await logoutUser();
+          setUser(null);
+          setAuthError(status === 'pending_activation' ? "Pending Admin Approval" : "Access denied.");
+          setView(ViewState.AUTH);
+        }
       } else {
         setUser(null);
         setView(prev => prev !== ViewState.PRIVACY_POLICY ? ViewState.AUTH : prev);
@@ -573,7 +585,7 @@ const App: React.FC = () => {
   }
 
   if (currentView === ViewState.AUTH) {
-    return <AuthView onLogin={() => { }} onViewPrivacy={() => setView(ViewState.PRIVACY_POLICY)} />;
+    return <AuthView onLogin={() => { }} onViewPrivacy={() => setView(ViewState.PRIVACY_POLICY)} initialError={authError} />;
   }
 
   return (
