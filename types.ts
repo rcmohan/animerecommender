@@ -30,6 +30,7 @@ export interface Anime {
 export interface UserProfile {
   uid?: string; // Added for Firebase mapping
   username: string;
+  status?: 'active' | 'pending_activation' | 'suspended';
   likes: string[];
   dislikes: string[];
 }

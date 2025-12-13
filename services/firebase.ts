@@ -68,6 +68,7 @@ export const initializeUserDoc = async (user: User) => {
     if (!docSnap.exists()) {
       const profile: UserProfile = {
         username: user.email?.split('@')[0] || "AnimeFan",
+        status: 'pending_activation',
         likes: [],
         dislikes: [],
         uid: user.uid
@@ -120,6 +121,21 @@ export const subscribeToProfile = (uid: string, callback: (profile: UserProfile)
     console.error("Error subscribing to profile:", error);
   });
   return unsubscribe;
+};
+
+export const getUserStatus = async (uid: string): Promise<string> => {
+  try {
+    const userRef = doc(db, "users", uid, "profile", "main");
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data() as UserProfile;
+      return data.status || 'active';
+    }
+    return 'pending_activation';
+  } catch (error) {
+    console.error("Error getting user status:", error);
+    return 'error';
+  }
 };
 
 // --- SERVER-SIDE WRITES ---

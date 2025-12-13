@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Button, Input } from './Shared';
-import { 
-  auth, 
-  initializeUserDoc, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
+import {
+  auth,
+  initializeUserDoc,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  getUserStatus,
+  logoutUser
 } from '../services/firebase';
-import { AlertCircle, Check, Tv, ArrowRight, Sparkles } from 'lucide-react';
+import { AlertCircle, Check, Tv, ArrowRight, Sparkles, Info } from 'lucide-react';
+import ReCAPTCHA from "react-google-recaptcha";
 
 interface AuthProps {
   onLogin: () => void;
@@ -20,11 +23,14 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaValue, setCaptchaValue] = useState<string | null>(null);
 
   const validate = () => {
     if (!email.includes('@')) return "Please enter a valid email.";
     if (password.length < 8) return "Password must be at least 8 characters.";
+    if (!captchaValue) return "Please complete the CAPTCHA.";
     if (isRegistering) {
       if (password !== confirmPassword) return "Passwords do not match.";
       if (!consent) return "You must accept the data policy to register.";
@@ -34,6 +40,7 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
 
   const handleSubmit = async () => {
     setError(null);
+    setNotification(null);
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -45,10 +52,24 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
       if (isRegistering) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await initializeUserDoc(cred.user);
+        await logoutUser();
+        setIsRegistering(false);
+        setNotification("Registration successful! Please wait for approval.");
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const status = await getUserStatus(cred.user.uid);
+
+        if (status !== 'active') {
+          await logoutUser();
+          setError("Pending Admin Approval");
+          return;
+        }
+
+        onLogin();
       }
-      onLogin(); 
     } catch (err: any) {
       console.error("Auth Error:", err);
       let msg = "An error occurred.";
@@ -67,7 +88,7 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-pink-900/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05]"></div>
       </div>
-      
+
       <div className="relative z-10 w-full max-w-[420px]">
         {/* Brand Header */}
         <div className="text-center mb-8">
@@ -82,16 +103,16 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
 
         {/* Auth Card */}
         <div className="glass-card rounded-3xl p-8 backdrop-blur-xl border border-white/10 shadow-2xl relative overflow-hidden">
-          
+
           {/* Top Tabs */}
           <div className="flex gap-2 p-1 bg-black/20 rounded-xl mb-8">
-            <button 
+            <button
               onClick={() => { setIsRegistering(false); setError(null); }}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isRegistering ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
               Sign In
             </button>
-            <button 
+            <button
               onClick={() => { setIsRegistering(true); setError(null); }}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isRegistering ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
@@ -101,19 +122,19 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
 
           <div className="space-y-5">
             <div>
-              <Input 
-                type="email" 
-                placeholder="Email Address" 
+              <Input
+                type="email"
+                placeholder="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-black/30"
               />
             </div>
-            
+
             <div>
-              <Input 
-                type="password" 
-                placeholder="Password" 
+              <Input
+                type="password"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-black/30"
@@ -122,29 +143,36 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
 
             {isRegistering && (
               <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-5">
-                <Input 
-                  type="password" 
-                  placeholder="Confirm Password" 
+                <Input
+                  type="password"
+                  placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="bg-black/30"
                 />
-                
+
                 <label className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group">
-                   <div className="relative mt-0.5">
-                      <input 
-                        type="checkbox" 
-                        className="peer sr-only"
-                        checked={consent}
-                        onChange={(e) => setConsent(e.target.checked)}
-                      />
-                      <div className="w-5 h-5 rounded border border-zinc-600 bg-black/50 peer-checked:bg-pink-500 peer-checked:border-pink-500 transition-all"></div>
-                      <Check size={14} className="absolute inset-0 m-auto text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                   </div>
-                   <span className="text-xs text-zinc-400 leading-relaxed">
-                     I agree to the <span className="text-pink-400 group-hover:text-pink-300">Privacy Policy</span> and consent to data processing for app features.
-                   </span>
+                  <div className="relative mt-0.5">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                    />
+                    <div className="w-5 h-5 rounded border border-zinc-600 bg-black/50 peer-checked:bg-pink-500 peer-checked:border-pink-500 transition-all"></div>
+                    <Check size={14} className="absolute inset-0 m-auto text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                  </div>
+                  <span className="text-xs text-zinc-400 leading-relaxed">
+                    I agree to the <span className="text-pink-400 group-hover:text-pink-300">Privacy Policy</span> and consent to data processing for app features.
+                  </span>
                 </label>
+              </div>
+            )}
+
+            {notification && (
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-3 text-green-400 text-xs animate-in slide-in-from-top-2 duration-300">
+                <Info size={16} className="shrink-0 mt-0.5" />
+                {notification}
               </div>
             )}
 
@@ -155,13 +183,21 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy }) => {
               </div>
             )}
 
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
+                onChange={(val) => setCaptchaValue(val)}
+                theme="dark"
+              />
+            </div>
+
             <Button onClick={handleSubmit} className="w-full h-12 text-lg" disabled={loading}>
               {loading ? <Sparkles className="animate-spin" /> : (isRegistering ? "Start Tracking" : "Enter Portal")}
               {!loading && <ArrowRight size={18} />}
             </Button>
           </div>
         </div>
-        
+
         {/* Footer */}
         <div className="mt-8 text-center space-y-4">
           <button onClick={onViewPrivacy} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-medium">
