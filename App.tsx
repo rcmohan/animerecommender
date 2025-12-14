@@ -358,81 +358,82 @@ const ProfileView = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 animate-in fade-in duration-500">
-      <div className="space-y-8">
-        <SectionTitle title="Taste Profile" icon={Brain} subtitle="Teach the AI what makes you tick." />
+    <div className="space-y-12 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="space-y-8">
+          <SectionTitle title="Taste Profile" icon={Brain} subtitle="Teach the AI what makes you tick." />
 
-        <div className="grid gap-6">
-          {/* Likes */}
-          <Card className="border-green-500/20 bg-green-950/5">
-            <h3 className="font-bold text-green-400 mb-4 flex items-center gap-2"><Check size={18} /> I Love</h3>
-            <div className="flex gap-3 mb-6">
-              <Input
-                value={inputLike}
-                onChange={(e) => setInputLike(e.target.value)}
-                placeholder="e.g. Attack on Titan"
-                className="bg-black/40 border-green-500/20 focus:border-green-500"
-              />
-              <Button onClick={addLike} variant="secondary" className="bg-green-500/10 text-green-400 hover:bg-green-500/20"><Plus size={18} /></Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {userProfile.likes.map(like => (
-                <Badge key={like} variant="green">
-                  {like}
-                  <div className="ml-2 pl-2 border-l border-green-500/30 flex gap-1">
+          <div className="grid gap-6">
+            {/* Likes */}
+            <Card className="border-green-500/20 bg-green-950/5">
+              <h3 className="font-bold text-green-400 mb-4 flex items-center gap-2"><Check size={18} /> I Love</h3>
+              <div className="flex gap-3 mb-6">
+                <Input
+                  value={inputLike}
+                  onChange={(e) => setInputLike(e.target.value)}
+                  placeholder="e.g. Attack on Titan"
+                  className="bg-black/40 border-green-500/20 focus:border-green-500"
+                />
+                <Button onClick={addLike} variant="secondary" className="bg-green-500/10 text-green-400 hover:bg-green-500/20"><Plus size={18} /></Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {userProfile.likes.map(like => (
+                  <Badge key={like} variant="green">
+                    {like}
+                    <div className="ml-2 pl-2 border-l border-green-500/30 flex gap-1">
                       <button onClick={() => handleMove(like, 'likes', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
                       <button onClick={() => removePreference(like, 'likes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
-                  </div>
-                </Badge>
-              ))}
-              {userProfile.likes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
-            </div>
-          </Card>
+                    </div>
+                  </Badge>
+                ))}
+                {userProfile.likes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
+              </div>
+            </Card>
 
-          {/* Dislikes */}
-          <Card className="border-red-500/20 bg-red-950/5">
-            <h3 className="font-bold text-red-400 mb-4 flex items-center gap-2"><X size={18} /> I Hate</h3>
-            <div className="flex gap-3 mb-6">
-              <Input
-                value={inputDislike}
-                onChange={(e) => setInputDislike(e.target.value)}
-                placeholder="e.g. Fillers"
-                className="bg-black/40 border-red-500/20 focus:border-red-500"
-              />
-              <Button onClick={addDislike} variant="secondary" className="bg-red-500/10 text-red-400 hover:bg-red-500/20"><Plus size={18} /></Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {userProfile.dislikes.map(dislike => (
-                <Badge key={dislike} variant="pink">
-                  {dislike}
-                  <div className="ml-2 pl-2 border-l border-red-500/30 flex gap-1">
+            {/* Dislikes */}
+            <Card className="border-red-500/20 bg-red-950/5">
+              <h3 className="font-bold text-red-400 mb-4 flex items-center gap-2"><X size={18} /> I Hate</h3>
+              <div className="flex gap-3 mb-6">
+                <Input
+                  value={inputDislike}
+                  onChange={(e) => setInputDislike(e.target.value)}
+                  placeholder="e.g. Fillers"
+                  className="bg-black/40 border-red-500/20 focus:border-red-500"
+                />
+                <Button onClick={addDislike} variant="secondary" className="bg-red-500/10 text-red-400 hover:bg-red-500/20"><Plus size={18} /></Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {userProfile.dislikes.map(dislike => (
+                  <Badge key={dislike} variant="pink">
+                    {dislike}
+                    <div className="ml-2 pl-2 border-l border-red-500/30 flex gap-1">
                       <button onClick={() => handleMove(dislike, 'dislikes', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
-                        <button onClick={() => removePreference(dislike, 'dislikes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
-                  </div>
-                </Badge>
-              ))}
-              {userProfile.dislikes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
-            </div>
-          </Card>
-        </div>
+                      <button onClick={() => removePreference(dislike, 'dislikes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
+                    </div>
+                  </Badge>
+                ))}
+                {userProfile.dislikes.length === 0 && <span className="text-zinc-600 text-sm italic">Nothing here yet...</span>}
+              </div>
+            </Card>
+          </div>
           {/* Not Rated / In Progress */}
           <Card className="border-yellow-500/20 bg-yellow-950/5">
-             <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2"><Star size={18} /> Not Rated Yet</h3>
-             <div className="flex flex-wrap gap-2">
+            <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2"><Star size={18} /> Not Rated Yet</h3>
+            <div className="flex flex-wrap gap-2">
               {unratedAnime.length > 0 ? (
                 unratedAnime.map(anime => (
                   <Badge key={anime.id} variant="yellow">
                     {anime.title}
-                     <div className="ml-2 pl-2 border-l border-yellow-500/30 flex gap-1">
-                        <button onClick={() => handleMove(anime.title, 'unrated', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
-                        <button onClick={() => handleMove(anime.title, 'unrated', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
-                     </div>
+                    <div className="ml-2 pl-2 border-l border-yellow-500/30 flex gap-1">
+                      <button onClick={() => handleMove(anime.title, 'unrated', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
+                      <button onClick={() => handleMove(anime.title, 'unrated', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
+                    </div>
                   </Badge>
                 ))
               ) : (
                 <span className="text-zinc-600 text-sm italic">All your anime are rated!</span>
               )}
-             </div>
+            </div>
           </Card>
         </div>
       </div>
@@ -456,7 +457,7 @@ const ProfileView = ({
           </ResponsiveContainer>
         </Card>
       </div>
-    </div >
+    </div>
   );
 };
 
