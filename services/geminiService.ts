@@ -101,11 +101,18 @@ export const getRecommendations = async (watched: Anime[], likes: string[], disl
 
     const prompt = `
       User History:
-      Watched: ${watchedTitles}
-      Likes: ${likes.join(", ")}
-      Dislikes: ${dislikes.join(", ")}
+      ALREADY WATCHED / WATCHING (DO NOT RECOMMEND THESE): ${watchedTitles}
       
-      Recommend 3 anime they haven't seen.
+      User Likes: ${likes.join(", ")}
+      User Dislikes: ${dislikes.join(", ")}
+      
+      Task: Recommend 3 NEW anime they haven't seen.
+      Rules:
+      1. IGNORE any title listed in "ALREADY WATCHED".
+      2. Base recommendations on their "Likes" and "Dislikes".
+      3. If "Likes" is empty, suggest generally highly-rated diverse anime not in the watched list.
+      4. Ensure variety in genres.
+      
       Return JSON array.
     `;
 

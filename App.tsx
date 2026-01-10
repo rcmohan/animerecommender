@@ -158,7 +158,7 @@ const DashboardView = ({
                 </div>
                 <div className="text-white font-medium mb-1 flex items-center gap-2">
                   {anime.currentArc || 'Unknown Arc'}
-                  {(!anime.currentArc || anime.currentArc === 'Unknown Arc') && (
+                  {(!anime.currentArc || anime.currentArc.includes('Unknown') && anime.currentArc.includes('Lookup Pending')) && (
                     <button
                       onClick={() => onRefreshArc(anime.id)}
                       className="p-1 hover:bg-white/10 rounded-full transition-colors text-pink-400 hover:text-pink-300"
@@ -333,24 +333,25 @@ const ProfileView = ({
     }
   };
 
-  const handleMove = (item: string, from: 'likes' | 'dislikes' | 'unrated', to: 'likes' | 'dislikes') => {
+  const handleMove = (item: string, from: 'likes' | 'dislikes' | 'unrated', to: 'likes' | 'dislikes' | 'unrated') => {
     const updates: Partial<UserProfile> = {};
+    let newLikes = [...userProfile.likes];
+    let newDislikes = [...userProfile.dislikes];
 
-    // Remove from source
-    if (from === 'likes') updates.likes = userProfile.likes.filter(i => i !== item);
-    if (from === 'dislikes') updates.dislikes = userProfile.dislikes.filter(i => i !== item);
-    // Note: 'unrated' logic is implicit; we don't remove anime from the main list here, just add to preferences.
+    // Remove from source if applicable (idempotent)
+    if (from === 'likes') newLikes = newLikes.filter(i => i !== item);
+    if (from === 'dislikes') newDislikes = newDislikes.filter(i => i !== item);
 
     // Add to target
-    if (to === 'likes') {
-      const existing = updates.likes || userProfile.likes;
-      if (!existing.includes(item)) updates.likes = [...existing, item];
-    }
-    if (to === 'dislikes') {
-      const existing = updates.dislikes || userProfile.dislikes;
-      if (!existing.includes(item)) updates.dislikes = [...existing, item];
-    }
+    if (to === 'likes' && !newLikes.includes(item)) newLikes.push(item);
+    if (to === 'dislikes' && !newDislikes.includes(item)) newDislikes.push(item);
 
+    // Ensure mutual exclusivity (e.g. can't be validly both liked and disliked)
+    if (to === 'likes') newDislikes = newDislikes.filter(i => i !== item);
+    if (to === 'dislikes') newLikes = newLikes.filter(i => i !== item);
+
+    updates.likes = newLikes;
+    updates.dislikes = newDislikes;
     onUpdateProfile(updates);
   };
 
@@ -361,7 +362,12 @@ const ProfileView = ({
   };
 
   // Dynamic Data Calculation
-  const unratedAnime = animeList.filter(a => !a.rating || a.rating === 0);
+  // "Not Rated" now implies "Not in Likes AND Not in Dislikes AND No Numeric Rating"
+  const unratedAnime = animeList.filter(a =>
+    (!a.rating || a.rating === 0) &&
+    !userProfile.likes.includes(a.title) &&
+    !userProfile.dislikes.includes(a.title)
+  );
 
   const chartData = [
     { name: 'Watching', value: animeList.filter(a => a.status === AnimeStatus.WATCHING).length },
@@ -394,8 +400,8 @@ const ProfileView = ({
                   <Badge key={like} variant="green">
                     {like}
                     <div className="ml-2 pl-2 border-l border-green-500/30 flex gap-1">
+                      <button onClick={() => handleMove(like, 'likes', 'unrated')} className="hover:text-yellow-400" title="Move to Not Rated (Reset)"><div className="rotate-45"><Plus size={12} /></div></button>
                       <button onClick={() => handleMove(like, 'likes', 'dislikes')} className="hover:text-red-400" title="Move to Hates"><X size={12} /></button>
-                      <button onClick={() => removePreference(like, 'likes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
                     </div>
                   </Badge>
                 ))}
@@ -421,7 +427,7 @@ const ProfileView = ({
                     {dislike}
                     <div className="ml-2 pl-2 border-l border-red-500/30 flex gap-1">
                       <button onClick={() => handleMove(dislike, 'dislikes', 'likes')} className="hover:text-green-400" title="Move to Loves"><Check size={12} /></button>
-                      <button onClick={() => removePreference(dislike, 'dislikes')} className="hover:text-white" title="Remove"><div className="rotate-45"><Plus size={12} /></div></button>
+                      <button onClick={() => handleMove(dislike, 'dislikes', 'unrated')} className="hover:text-yellow-400" title="Move to Not Rated (Reset)"><div className="rotate-45"><Plus size={12} /></div></button>
                     </div>
                   </Badge>
                 ))}
