@@ -44,7 +44,7 @@ export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number
 
     const text = response.text;
     if (!text) throw new Error("No response from AI");
-    
+
     return JSON.parse(text);
 
   } catch (error) {
@@ -61,7 +61,7 @@ export const getAnimeArcInfo = async (animeTitle: string, currentEpisode: number
 export const getCompletionProbability = async (animeTitle: string, userLikes: string[]): Promise<{ probability: number; reason: string }> => {
   try {
     const ai = getAI();
-    
+
     const prompt = `
       The user wants to watch "${animeTitle}".
       User previously liked: ${userLikes.join(", ")}.
@@ -98,16 +98,23 @@ export const getCompletionProbability = async (animeTitle: string, userLikes: st
 export const getRecommendations = async (watched: Anime[], likes: string[], dislikes: string[]): Promise<Recommendation[]> => {
   try {
     const ai = getAI();
-    
+
     const watchedTitles = watched.map(a => `${a.title} (${a.rating || 'unrated'})`).join(", ");
-    
+
     const prompt = `
       User History:
-      Watched: ${watchedTitles}
-      Likes: ${likes.join(", ")}
-      Dislikes: ${dislikes.join(", ")}
+      ALREADY WATCHED / WATCHING (DO NOT RECOMMEND THESE): ${watchedTitles}
       
-      Recommend 3 anime they haven't seen.
+      User Likes: ${likes.join(", ")}
+      User Dislikes: ${dislikes.join(", ")}
+      
+      Task: Recommend 3 NEW anime they haven't seen.
+      Rules:
+      1. IGNORE any title listed in "ALREADY WATCHED".
+      2. Base recommendations on their "Likes" and "Dislikes".
+      3. If "Likes" is empty, suggest generally highly-rated diverse anime not in the watched list.
+      4. Ensure variety in genres.
+      
       Return JSON array.
     `;
 
@@ -146,14 +153,14 @@ export const getRecommendations = async (watched: Anime[], likes: string[], disl
 
 // Helper for 'Prevent Hold' motivation
 export const getMotivationalMessage = async (animeTitle: string): Promise<string> => {
-    try {
-        const ai = getAI();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
-        });
-        return response.text || "Don't give up now, the best part is coming!";
-    } catch (e) {
-        return "Don't give up now, the best part is coming!";
-    }
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `The user wants to put "${animeTitle}" on hold. Give a very short, intense 1-sentence motivation to keep watching because the next arc is fire.`
+    });
+    return response.text || "Don't give up now, the best part is coming!";
+  } catch (e) {
+    return "Don't give up now, the best part is coming!";
+  }
 }
