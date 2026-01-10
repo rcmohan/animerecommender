@@ -129,8 +129,10 @@ export const getUserStatus = async (uid: string): Promise<string> => {
     const docSnap = await getDoc(userRef);
     if (docSnap.exists()) {
       const data = docSnap.data() as UserProfile;
+      console.log(`[AuthDebug] User ${uid} status: ${data.status}`);
       return data.status || 'active';
     }
+    console.log(`[AuthDebug] User ${uid} profile not found. Defaulting to pending.`);
     return 'pending_activation';
   } catch (error) {
     console.error("Error getting user status:", error);

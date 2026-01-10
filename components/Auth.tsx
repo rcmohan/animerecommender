@@ -62,7 +62,7 @@ export const AuthView: React.FC<AuthProps> = ({ onLogin, onViewPrivacy, initialE
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         const status = await getUserStatus(cred.user.uid);
-
+        console.log(cred.user.uid, " status:", status);
         if (status !== 'active') {
           await logoutUser();
           setError("Pending Admin Approval");
