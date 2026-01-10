@@ -46,12 +46,14 @@ const DashboardView = ({
   onUpdateAnime,
   onAddAnime,
   onRateAnime,
+  onRefreshArc,
   userProfile
 }: {
   animeList: Anime[],
   onUpdateAnime: (id: string, ep: number) => void,
   onAddAnime: (title: string, currentEp: number) => void,
   onRateAnime: (id: string, rating: number) => void,
+  onRefreshArc: (id: string) => void,
   userProfile: UserProfile
 }) => {
   const [newTitle, setNewTitle] = useState('');
@@ -154,7 +156,18 @@ const DashboardView = ({
                   <BrainCircuit size={14} />
                   Current Arc
                 </div>
-                <div className="text-white font-medium mb-1">{anime.currentArc || 'Unknown Arc'}</div>
+                <div className="text-white font-medium mb-1 flex items-center gap-2">
+                  {anime.currentArc || 'Unknown Arc'}
+                  {(!anime.currentArc || anime.currentArc === 'Unknown Arc') && (
+                    <button
+                      onClick={() => onRefreshArc(anime.id)}
+                      className="p-1 hover:bg-white/10 rounded-full transition-colors text-pink-400 hover:text-pink-300"
+                      title="Retry Arc Detection"
+                    >
+                      <Zap size={12} className="fill-current" />
+                    </button>
+                  )}
+                </div>
                 {anime.episodesToArcEnd !== undefined && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-zinc-500">
@@ -603,6 +616,28 @@ const App: React.FC = () => {
     else setAnimeList(prev => prev.map(a => a.id === id ? updated : a));
   };
 
+  const handleRefreshArc = async (id: string) => {
+    const currentAnime = animeList.find(a => a.id === id);
+    if (!currentAnime) return;
+
+    try {
+      const info = await getAnimeArcInfo(currentAnime.title, currentAnime.currentEpisode);
+      if (info) {
+        const updated = {
+          ...currentAnime,
+          currentArc: info.currentArc,
+          episodesToArcEnd: info.episodesToArcEnd,
+          totalEpisodes: info.totalEpisodes
+        };
+
+        if (user) await saveAnimeToFirestore(user.uid, updated);
+        else setAnimeList(prev => prev.map(a => a.id === id ? updated : a));
+      }
+    } catch (e) {
+      console.error("Failed to refresh arc", e);
+    }
+  };
+
   const handleRateAnime = async (id: string, rating: number) => {
     if (user) {
       const currentAnime = animeList.find(a => a.id === id);
@@ -693,6 +728,7 @@ const App: React.FC = () => {
           onUpdateAnime={handleUpdateAnime}
           onAddAnime={handleAddAnime}
           onRateAnime={handleRateAnime}
+          onRefreshArc={handleRefreshArc}
           userProfile={userProfile}
         />
       )}
